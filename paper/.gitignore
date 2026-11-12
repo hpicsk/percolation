@@ -1,0 +1,21 @@
+# LaTeX build artifacts
+*.aux
+*.abs
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+
+# Python
+__pycache__/
+*.pyc
+
+# Materialized data panels (regenerable from kr_marcap)
+data/cache/
+
+# OS
+.DS_Store

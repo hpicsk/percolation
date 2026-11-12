@@ -1,0 +1,679 @@
+% ============================================================
+% paper/params.tex
+%
+% Single source of truth for every numeric value cited in
+% paper.tex. Two regions:
+%
+%   GENERATED REGION : rebuilt from regenerated CSV/parquet
+%                      results under data/ by
+%                      scripts/generate_params.py.
+%                      Do NOT hand-edit.
+%
+%   MANUAL REGION    : fixed conventions (dataset names,
+%                      axis bounds, hand-chosen documented
+%                      thresholds). Hand-edited.
+%
+% Reproducibility: bash reproduce.sh re-runs every pipeline
+% stage, regenerates this file's GENERATED region, then
+% builds the paper. A diff in the produced PDF means a CSV
+% cell drifted, and the responsible commit must be
+% identified.
+% ============================================================
+
+% === BEGIN GENERATED REGION ===
+
+% Design constants, read from the code that fixes them (subsec:methods, subsec:data_description, tab:settings)
+\newcommand{\paperWindowDays}{60\xspace}
+\newcommand{\paperStepDays}{20\xspace}
+\newcommand{\paperPerQuintile}{300\xspace}
+\newcommand{\minValidFractionPct}{80\%\xspace}
+\newcommand{\minSectorSize}{20\xspace}
+\newcommand{\minSectorSizeLo}{15\xspace}
+\newcommand{\minSectorSizeHi}{25\xspace}
+\newcommand{\rollingMASteps}{6\xspace}
+\newcommand{\blockBootDraws}{10{,}000\xspace}
+\newcommand{\networkSizeNMin}{50\xspace}
+\newcommand{\networkSizeNMax}{300\xspace}
+\newcommand{\networkSizeNStep}{50\xspace}
+\newcommand{\networkSizeWindowStride}{5\xspace}
+\newcommand{\paperSampleStart}{2005\xspace}
+\newcommand{\paperSampleEnd}{2025\xspace}
+\newcommand{\blockBootLenHeadline}{6\xspace}
+
+% Threshold scan grid (subsec:methods, tab:settings)
+\newcommand{\rhoGridPoints}{200\xspace}
+\newcommand{\rhoGridLo}{0.05\xspace}
+\newcommand{\rhoGridHi}{0.90\xspace}
+\newcommand{\splineMeshPoints}{2,000\xspace}
+
+% Headline rho_c (tab:percolation, subsec:main_result)
+\newcommand{\barRhoCQone}{0.524\xspace}
+\newcommand{\barRhoCQtwo}{0.556\xspace}
+\newcommand{\barRhoCQthree}{0.567\xspace}
+\newcommand{\barRhoCQfour}{0.576\xspace}
+\newcommand{\barRhoCQfive}{0.584\xspace}
+\newcommand{\rhoCGapHeadline}{0.060\xspace}
+\newcommand{\nWindowsHeadline}{257\xspace}
+\newcommand{\medianStocksHeadlineQone}{279\xspace}
+\newcommand{\rhoCStdHeadlineQone}{0.097\xspace}
+\newcommand{\rhoCMinHeadlineQone}{0.398\xspace}
+\newcommand{\rhoCMaxHeadlineQone}{0.879\xspace}
+\newcommand{\medianStocksHeadlineQtwo}{290\xspace}
+\newcommand{\rhoCStdHeadlineQtwo}{0.106\xspace}
+\newcommand{\rhoCMinHeadlineQtwo}{0.397\xspace}
+\newcommand{\rhoCMaxHeadlineQtwo}{0.886\xspace}
+\newcommand{\medianStocksHeadlineQthree}{291\xspace}
+\newcommand{\rhoCStdHeadlineQthree}{0.102\xspace}
+\newcommand{\rhoCMinHeadlineQthree}{0.415\xspace}
+\newcommand{\rhoCMaxHeadlineQthree}{0.874\xspace}
+\newcommand{\medianStocksHeadlineQfour}{292\xspace}
+\newcommand{\rhoCStdHeadlineQfour}{0.100\xspace}
+\newcommand{\rhoCMinHeadlineQfour}{0.414\xspace}
+\newcommand{\rhoCMaxHeadlineQfour}{0.891\xspace}
+\newcommand{\medianStocksHeadlineQfive}{295\xspace}
+\newcommand{\rhoCStdHeadlineQfive}{0.095\xspace}
+\newcommand{\rhoCMinHeadlineQfive}{0.416\xspace}
+\newcommand{\rhoCMaxHeadlineQfive}{0.880\xspace}
+
+% KOSPI-only HAC t and block-bootstrap p (subsec:size_confounds, tab:robustness_summary)
+\newcommand{\tHacKospiQoneQtwo}{5.01\xspace}
+\newcommand{\pBlockBootKospiQoneQtwo}{< 10^{-4}\xspace}
+\newcommand{\tHacKospiQtwoQthree}{0.17\xspace}
+\newcommand{\pBlockBootKospiQtwoQthree}{= 0.50\xspace}
+\newcommand{\tHacKospiQthreeQfour}{-0.87\xspace}
+\newcommand{\pBlockBootKospiQthreeQfour}{= 0.75\xspace}
+\newcommand{\tHacKospiQfourQfive}{5.46\xspace}
+\newcommand{\pBlockBootKospiQfourQfive}{< 10^{-4}\xspace}
+
+% Within-sector HAC t and block-bootstrap p (subsec:size_confounds, tab:robustness_summary)
+\newcommand{\tHacWithinSectorQoneQtwo}{7.90\xspace}
+\newcommand{\pBlockBootWithinSectorQoneQtwo}{< 10^{-4}\xspace}
+\newcommand{\tHacWithinSectorQtwoQthree}{3.95\xspace}
+\newcommand{\pBlockBootWithinSectorQtwoQthree}{= 3.0 \times 10^{-4}\xspace}
+\newcommand{\tHacWithinSectorQthreeQfour}{0.93\xspace}
+\newcommand{\pBlockBootWithinSectorQthreeQfour}{= 0.16\xspace}
+\newcommand{\tHacWithinSectorQfourQfive}{1.87\xspace}
+\newcommand{\pBlockBootWithinSectorQfourQfive}{= 0.04\xspace}
+
+% Autocorrelation-robust headline significance (subsec:main_result, tab:pair_significance)
+\newcommand{\tHacQoneQtwo}{9.6\xspace}
+\newcommand{\pBlockBootQoneQtwo}{10^{-4}\xspace}
+\newcommand{\tHacQtwoQthree}{3.1\xspace}
+\newcommand{\pBlockBootQtwoQthree}{2.8 \times 10^{-3}\xspace}
+\newcommand{\tHacQthreeQfour}{3.0\xspace}
+\newcommand{\pBlockBootQthreeQfour}{2.7 \times 10^{-3}\xspace}
+\newcommand{\tHacQfourQfive}{1.4\xspace}
+\newcommand{\pBlockBootQfourQfive}{0.08\xspace}
+\newcommand{\tHacQoneQfive}{6.8\xspace}
+\newcommand{\fracWindowsAdjPairLo}{54\%\xspace}
+\newcommand{\fracWindowsAdjPairHi}{84\%\xspace}
+\newcommand{\pBlockBootQoneQfive}{10^{-4}\xspace}
+\newcommand{\nwLagHeadline}{4\xspace}
+\newcommand{\fracWindowsQoneLtQfiveKr}{83\%\xspace}
+
+% Draw seeds and the spread of each step across the draws (subsec:methods, subsec:inference, tab:step_robustness)
+\newcommand{\nDrawSeeds}{20\xspace}
+\newcommand{\sdDrawKrQoneQtwo}{0.0029\xspace}
+\newcommand{\sdDrawKrQtwoQthree}{0.0036\xspace}
+\newcommand{\sdDrawKrQthreeQfour}{0.0037\xspace}
+\newcommand{\sdDrawKrQfourQfive}{0.0037\xspace}
+\newcommand{\sdDrawKrQoneQfive}{0.0026\xspace}
+\newcommand{\sdDrawTwQoneQtwo}{0.0023\xspace}
+\newcommand{\sdDrawTwQtwoQthree}{0.0024\xspace}
+\newcommand{\sdDrawTwQthreeQfour}{0.0022\xspace}
+\newcommand{\sdDrawTwQfourQfive}{0.0018\xspace}
+\newcommand{\sdDrawTwQoneQfive}{0.0017\xspace}
+\newcommand{\nDrawsRhoCAtGridEdge}{35\xspace}
+\newcommand{\nDrawCellsHeadline}{25{,}700\xspace}
+
+% Headline tests at longer bandwidths (subsec:inference, subsec:main_result, tab:step_robustness)
+\newcommand{\bwShort}{12\xspace}
+\newcommand{\bwLong}{24\xspace}
+\newcommand{\tHacBwKrShortQoneQtwo}{8.1\xspace}
+\newcommand{\pBlockBootBwKrShortQoneQtwo}{< 10^{-4}\xspace}
+\newcommand{\tHacBwKrLongQoneQtwo}{7.5\xspace}
+\newcommand{\pBlockBootBwKrLongQoneQtwo}{< 10^{-4}\xspace}
+\newcommand{\tHacBwKrShortQtwoQthree}{2.4\xspace}
+\newcommand{\pBlockBootBwKrShortQtwoQthree}{0.01\xspace}
+\newcommand{\tHacBwKrLongQtwoQthree}{2.0\xspace}
+\newcommand{\pBlockBootBwKrLongQtwoQthree}{0.045\xspace}
+\newcommand{\tHacBwKrShortQthreeQfour}{2.4\xspace}
+\newcommand{\pBlockBootBwKrShortQthreeQfour}{0.01\xspace}
+\newcommand{\tHacBwKrLongQthreeQfour}{2.1\xspace}
+\newcommand{\pBlockBootBwKrLongQthreeQfour}{0.03\xspace}
+\newcommand{\tHacBwKrShortQfourQfive}{1.0\xspace}
+\newcommand{\pBlockBootBwKrShortQfourQfive}{0.11\xspace}
+\newcommand{\tHacBwKrLongQfourQfive}{0.9\xspace}
+\newcommand{\pBlockBootBwKrLongQfourQfive}{0.12\xspace}
+\newcommand{\tHacBwKrShortQoneQfive}{4.7\xspace}
+\newcommand{\pBlockBootBwKrShortQoneQfive}{< 10^{-4}\xspace}
+\newcommand{\tHacBwKrLongQoneQfive}{3.5\xspace}
+\newcommand{\pBlockBootBwKrLongQoneQfive}{< 10^{-4}\xspace}
+\newcommand{\tHacBwTwShortQoneQtwo}{9.4\xspace}
+\newcommand{\pBlockBootBwTwShortQoneQtwo}{< 10^{-4}\xspace}
+\newcommand{\tHacBwTwLongQoneQtwo}{9.1\xspace}
+\newcommand{\pBlockBootBwTwLongQoneQtwo}{< 10^{-4}\xspace}
+\newcommand{\tHacBwTwShortQtwoQthree}{7.0\xspace}
+\newcommand{\pBlockBootBwTwShortQtwoQthree}{< 10^{-4}\xspace}
+\newcommand{\tHacBwTwLongQtwoQthree}{7.6\xspace}
+\newcommand{\pBlockBootBwTwLongQtwoQthree}{< 10^{-4}\xspace}
+\newcommand{\tHacBwTwShortQthreeQfour}{7.3\xspace}
+\newcommand{\pBlockBootBwTwShortQthreeQfour}{< 10^{-4}\xspace}
+\newcommand{\tHacBwTwLongQthreeQfour}{7.2\xspace}
+\newcommand{\pBlockBootBwTwLongQthreeQfour}{< 10^{-4}\xspace}
+\newcommand{\tHacBwTwShortQfourQfive}{-0.6\xspace}
+\newcommand{\pBlockBootBwTwShortQfourQfive}{0.75\xspace}
+\newcommand{\tHacBwTwLongQfourQfive}{-0.6\xspace}
+\newcommand{\pBlockBootBwTwLongQfourQfive}{0.76\xspace}
+\newcommand{\tHacBwTwShortQoneQfive}{11.9\xspace}
+\newcommand{\pBlockBootBwTwShortQoneQfive}{< 10^{-4}\xspace}
+\newcommand{\tHacBwTwLongQoneQfive}{11.6\xspace}
+\newcommand{\pBlockBootBwTwLongQoneQfive}{< 10^{-4}\xspace}
+\newcommand{\tHacBwMinSignificant}{2.0\xspace}
+
+% rho_c from weekly returns on long windows (subsec:checks, subsec:main_result, tab:weekly_rho_c)
+\newcommand{\detectPowerPct}{80\%\xspace}
+\newcommand{\detectMultiplier}{2.49\xspace}
+\newcommand{\wkWindowShort}{252\xspace}
+\newcommand{\wkMedianWeeksShort}{54\xspace}
+\newcommand{\wkLagShort}{13\xspace}
+\newcommand{\wkWindowLong}{504\xspace}
+\newcommand{\wkMedianWeeksLong}{107\xspace}
+\newcommand{\wkLagLong}{26\xspace}
+\newcommand{\wkKrShortDailyStepQoneQtwo}{+0.043\xspace}
+\newcommand{\wkKrShortDailyTQoneQtwo}{6.9\xspace}
+\newcommand{\wkKrShortDailyPQoneQtwo}{< 10^{-4}\xspace}
+\newcommand{\wkKrShortWeeklyStepQoneQtwo}{+0.016\xspace}
+\newcommand{\wkKrShortWeeklyTQoneQtwo}{4.7\xspace}
+\newcommand{\wkKrShortWeeklyPQoneQtwo}{< 10^{-4}\xspace}
+\newcommand{\wkKrShortDetectQoneQtwo}{0.009\xspace}
+\newcommand{\wkKrShortDailyStepQtwoQthree}{+0.014\xspace}
+\newcommand{\wkKrShortDailyTQtwoQthree}{2.9\xspace}
+\newcommand{\wkKrShortDailyPQtwoQthree}{3.0 \times 10^{-4}\xspace}
+\newcommand{\wkKrShortWeeklyStepQtwoQthree}{+0.004\xspace}
+\newcommand{\wkKrShortWeeklyTQtwoQthree}{0.9\xspace}
+\newcommand{\wkKrShortWeeklyPQtwoQthree}{0.13\xspace}
+\newcommand{\wkKrShortDetectQtwoQthree}{0.011\xspace}
+\newcommand{\wkKrShortDailyStepQthreeQfour}{+0.018\xspace}
+\newcommand{\wkKrShortDailyTQthreeQfour}{4.0\xspace}
+\newcommand{\wkKrShortDailyPQthreeQfour}{2.0 \times 10^{-4}\xspace}
+\newcommand{\wkKrShortWeeklyStepQthreeQfour}{+0.008\xspace}
+\newcommand{\wkKrShortWeeklyTQthreeQfour}{2.1\xspace}
+\newcommand{\wkKrShortWeeklyPQthreeQfour}{0.03\xspace}
+\newcommand{\wkKrShortDetectQthreeQfour}{0.009\xspace}
+\newcommand{\wkKrShortDailyStepQfourQfive}{+0.040\xspace}
+\newcommand{\wkKrShortDailyTQfourQfive}{2.6\xspace}
+\newcommand{\wkKrShortDailyPQfourQfive}{3.0 \times 10^{-4}\xspace}
+\newcommand{\wkKrShortWeeklyStepQfourQfive}{-0.000\xspace}
+\newcommand{\wkKrShortWeeklyTQfourQfive}{-0.0\xspace}
+\newcommand{\wkKrShortWeeklyPQfourQfive}{0.50\xspace}
+\newcommand{\wkKrShortDetectQfourQfive}{0.021\xspace}
+\newcommand{\wkKrShortDailyStepQoneQfive}{+0.115\xspace}
+\newcommand{\wkKrShortDailyTQoneQfive}{4.8\xspace}
+\newcommand{\wkKrShortDailyPQoneQfive}{< 10^{-4}\xspace}
+\newcommand{\wkKrShortWeeklyStepQoneQfive}{+0.028\xspace}
+\newcommand{\wkKrShortWeeklyTQoneQfive}{1.8\xspace}
+\newcommand{\wkKrShortWeeklyPQoneQfive}{0.03\xspace}
+\newcommand{\wkKrShortDetectQoneQfive}{0.039\xspace}
+\newcommand{\wkKrLongDailyStepQoneQtwo}{+0.036\xspace}
+\newcommand{\wkKrLongDailyTQoneQtwo}{4.4\xspace}
+\newcommand{\wkKrLongDailyPQoneQtwo}{< 10^{-4}\xspace}
+\newcommand{\wkKrLongWeeklyStepQoneQtwo}{+0.020\xspace}
+\newcommand{\wkKrLongWeeklyTQoneQtwo}{3.1\xspace}
+\newcommand{\wkKrLongWeeklyPQoneQtwo}{< 10^{-4}\xspace}
+\newcommand{\wkKrLongDetectQoneQtwo}{0.016\xspace}
+\newcommand{\wkKrLongDailyStepQtwoQthree}{+0.016\xspace}
+\newcommand{\wkKrLongDailyTQtwoQthree}{3.0\xspace}
+\newcommand{\wkKrLongDailyPQtwoQthree}{1.2 \times 10^{-3}\xspace}
+\newcommand{\wkKrLongWeeklyStepQtwoQthree}{+0.010\xspace}
+\newcommand{\wkKrLongWeeklyTQtwoQthree}{2.1\xspace}
+\newcommand{\wkKrLongWeeklyPQtwoQthree}{0.01\xspace}
+\newcommand{\wkKrLongDetectQtwoQthree}{0.012\xspace}
+\newcommand{\wkKrLongDailyStepQthreeQfour}{+0.019\xspace}
+\newcommand{\wkKrLongDailyTQthreeQfour}{3.4\xspace}
+\newcommand{\wkKrLongDailyPQthreeQfour}{< 10^{-4}\xspace}
+\newcommand{\wkKrLongWeeklyStepQthreeQfour}{+0.004\xspace}
+\newcommand{\wkKrLongWeeklyTQthreeQfour}{0.6\xspace}
+\newcommand{\wkKrLongWeeklyPQthreeQfour}{0.35\xspace}
+\newcommand{\wkKrLongDetectQthreeQfour}{0.014\xspace}
+\newcommand{\wkKrLongDailyStepQfourQfive}{+0.056\xspace}
+\newcommand{\wkKrLongDailyTQfourQfive}{2.4\xspace}
+\newcommand{\wkKrLongDailyPQfourQfive}{4.0 \times 10^{-4}\xspace}
+\newcommand{\wkKrLongWeeklyStepQfourQfive}{+0.020\xspace}
+\newcommand{\wkKrLongWeeklyTQfourQfive}{1.2\xspace}
+\newcommand{\wkKrLongWeeklyPQfourQfive}{0.13\xspace}
+\newcommand{\wkKrLongDetectQfourQfive}{0.041\xspace}
+\newcommand{\wkKrLongDailyStepQoneQfive}{+0.126\xspace}
+\newcommand{\wkKrLongDailyTQoneQfive}{3.3\xspace}
+\newcommand{\wkKrLongDailyPQoneQfive}{< 10^{-4}\xspace}
+\newcommand{\wkKrLongWeeklyStepQoneQfive}{+0.053\xspace}
+\newcommand{\wkKrLongWeeklyTQoneQfive}{1.8\xspace}
+\newcommand{\wkKrLongWeeklyPQoneQfive}{0.03\xspace}
+\newcommand{\wkKrLongDetectQoneQfive}{0.073\xspace}
+\newcommand{\wkTwShortDailyStepQoneQtwo}{+0.088\xspace}
+\newcommand{\wkTwShortDailyTQoneQtwo}{14.2\xspace}
+\newcommand{\wkTwShortDailyPQoneQtwo}{< 10^{-4}\xspace}
+\newcommand{\wkTwShortWeeklyStepQoneQtwo}{+0.042\xspace}
+\newcommand{\wkTwShortWeeklyTQoneQtwo}{8.5\xspace}
+\newcommand{\wkTwShortWeeklyPQoneQtwo}{< 10^{-4}\xspace}
+\newcommand{\wkTwShortDetectQoneQtwo}{0.012\xspace}
+\newcommand{\wkTwShortDailyStepQtwoQthree}{+0.038\xspace}
+\newcommand{\wkTwShortDailyTQtwoQthree}{8.6\xspace}
+\newcommand{\wkTwShortDailyPQtwoQthree}{< 10^{-4}\xspace}
+\newcommand{\wkTwShortWeeklyStepQtwoQthree}{+0.022\xspace}
+\newcommand{\wkTwShortWeeklyTQtwoQthree}{5.1\xspace}
+\newcommand{\wkTwShortWeeklyPQtwoQthree}{< 10^{-4}\xspace}
+\newcommand{\wkTwShortDetectQtwoQthree}{0.011\xspace}
+\newcommand{\wkTwShortDailyStepQthreeQfour}{+0.027\xspace}
+\newcommand{\wkTwShortDailyTQthreeQfour}{4.6\xspace}
+\newcommand{\wkTwShortDailyPQthreeQfour}{< 10^{-4}\xspace}
+\newcommand{\wkTwShortWeeklyStepQthreeQfour}{+0.010\xspace}
+\newcommand{\wkTwShortWeeklyTQthreeQfour}{2.3\xspace}
+\newcommand{\wkTwShortWeeklyPQthreeQfour}{0.01\xspace}
+\newcommand{\wkTwShortDetectQthreeQfour}{0.011\xspace}
+\newcommand{\wkTwShortDailyStepQfourQfive}{+0.002\xspace}
+\newcommand{\wkTwShortDailyTQfourQfive}{0.3\xspace}
+\newcommand{\wkTwShortDailyPQfourQfive}{0.44\xspace}
+\newcommand{\wkTwShortWeeklyStepQfourQfive}{-0.005\xspace}
+\newcommand{\wkTwShortWeeklyTQfourQfive}{-0.8\xspace}
+\newcommand{\wkTwShortWeeklyPQfourQfive}{0.80\xspace}
+\newcommand{\wkTwShortDetectQfourQfive}{0.015\xspace}
+\newcommand{\wkTwShortDailyStepQoneQfive}{+0.155\xspace}
+\newcommand{\wkTwShortDailyTQoneQfive}{15.7\xspace}
+\newcommand{\wkTwShortDailyPQoneQfive}{< 10^{-4}\xspace}
+\newcommand{\wkTwShortWeeklyStepQoneQfive}{+0.069\xspace}
+\newcommand{\wkTwShortWeeklyTQoneQfive}{9.0\xspace}
+\newcommand{\wkTwShortWeeklyPQoneQfive}{< 10^{-4}\xspace}
+\newcommand{\wkTwShortDetectQoneQfive}{0.019\xspace}
+\newcommand{\wkTwLongDailyStepQoneQtwo}{+0.081\xspace}
+\newcommand{\wkTwLongDailyTQoneQtwo}{13.0\xspace}
+\newcommand{\wkTwLongDailyPQoneQtwo}{< 10^{-4}\xspace}
+\newcommand{\wkTwLongWeeklyStepQoneQtwo}{+0.058\xspace}
+\newcommand{\wkTwLongWeeklyTQoneQtwo}{8.6\xspace}
+\newcommand{\wkTwLongWeeklyPQoneQtwo}{< 10^{-4}\xspace}
+\newcommand{\wkTwLongDetectQoneQtwo}{0.017\xspace}
+\newcommand{\wkTwLongDailyStepQtwoQthree}{+0.038\xspace}
+\newcommand{\wkTwLongDailyTQtwoQthree}{5.9\xspace}
+\newcommand{\wkTwLongDailyPQtwoQthree}{< 10^{-4}\xspace}
+\newcommand{\wkTwLongWeeklyStepQtwoQthree}{+0.017\xspace}
+\newcommand{\wkTwLongWeeklyTQtwoQthree}{3.1\xspace}
+\newcommand{\wkTwLongWeeklyPQtwoQthree}{5.0 \times 10^{-4}\xspace}
+\newcommand{\wkTwLongDetectQtwoQthree}{0.014\xspace}
+\newcommand{\wkTwLongDailyStepQthreeQfour}{+0.031\xspace}
+\newcommand{\wkTwLongDailyTQthreeQfour}{4.4\xspace}
+\newcommand{\wkTwLongDailyPQthreeQfour}{< 10^{-4}\xspace}
+\newcommand{\wkTwLongWeeklyStepQthreeQfour}{+0.015\xspace}
+\newcommand{\wkTwLongWeeklyTQthreeQfour}{2.9\xspace}
+\newcommand{\wkTwLongWeeklyPQthreeQfour}{3.0 \times 10^{-4}\xspace}
+\newcommand{\wkTwLongDetectQthreeQfour}{0.013\xspace}
+\newcommand{\wkTwLongDailyStepQfourQfive}{+0.005\xspace}
+\newcommand{\wkTwLongDailyTQfourQfive}{0.8\xspace}
+\newcommand{\wkTwLongDailyPQfourQfive}{0.32\xspace}
+\newcommand{\wkTwLongWeeklyStepQfourQfive}{-0.010\xspace}
+\newcommand{\wkTwLongWeeklyTQfourQfive}{-1.3\xspace}
+\newcommand{\wkTwLongWeeklyPQfourQfive}{0.95\xspace}
+\newcommand{\wkTwLongDetectQfourQfive}{0.019\xspace}
+\newcommand{\wkTwLongDailyStepQoneQfive}{+0.156\xspace}
+\newcommand{\wkTwLongDailyTQoneQfive}{15.3\xspace}
+\newcommand{\wkTwLongDailyPQoneQfive}{< 10^{-4}\xspace}
+\newcommand{\wkTwLongWeeklyStepQoneQfive}{+0.080\xspace}
+\newcommand{\wkTwLongWeeklyTQoneQfive}{6.9\xspace}
+\newcommand{\wkTwLongWeeklyPQoneQfive}{< 10^{-4}\xspace}
+\newcommand{\wkTwLongDetectQoneQfive}{0.029\xspace}
+
+% KOSPI-only resolution of the interior steps (subsec:main_result)
+\newcommand{\kospiDetectMin}{0.013\xspace}
+
+% rho_c / mean |rho| coupling (subsec:threshold_vs_mean)
+\newcommand{\meanCorrSpearman}{0.95\xspace}
+\newcommand{\rhoCResidGapPctOfRaw}{33\%\xspace}
+\newcommand{\rhoCResidGapPctOfRawDegLo}{27\%\xspace}
+\newcommand{\rhoCResidGapPctOfRawDegHi}{53\%\xspace}
+\newcommand{\meanAbsCorrQone}{0.182\xspace}
+\newcommand{\meanAbsCorrQtwo}{0.198\xspace}
+\newcommand{\meanAbsCorrQthree}{0.204\xspace}
+\newcommand{\meanAbsCorrQfour}{0.206\xspace}
+\newcommand{\meanAbsCorrQfive}{0.207\xspace}
+\newcommand{\meanCorrStepQfourQfive}{+0.0003\xspace}
+
+% rho_c vs mean |rho| network-size divergence (subsec:threshold_vs_mean)
+\newcommand{\rhoCSlopeSqrtLogN}{0.167\xspace}
+\newcommand{\rhoCSlopeSqrtLogNRsq}{0.99\xspace}
+\newcommand{\meanCorrSlopeSqrtLogN}{0.000\xspace}
+\newcommand{\meanCorrDriftFiftyToThreeHundredLo}{-0.001\xspace}
+\newcommand{\meanCorrDriftFiftyToThreeHundredHi}{0.001\xspace}
+
+% Korean universe (subsec:data_description)
+\newcommand{\nStocksKoreaTotal}{3{,}293\xspace}
+\newcommand{\nDaysKoreaTotal}{5{,}182\xspace}
+
+% Korean panel coverage (subsec:data_description)
+\newcommand{\krPanelStart}{2005-01-03\xspace}
+\newcommand{\krPanelEnd}{2025-12-30\xspace}
+
+% Taiwan universe (subsec:data_description)
+\newcommand{\nStocksTaiwanTotal}{2{,}066\xspace}
+\newcommand{\nDaysTaiwanTotal}{5{,}166\xspace}
+
+% Taiwan panel coverage (subsec:data_description)
+\newcommand{\twPanelStart}{2005-01-03\xspace}
+\newcommand{\twPanelEnd}{2025-12-31\xspace}
+
+% Susceptibility-peak rho_c (tab:percolation, subsec:main_result, subsec:researcher_choices)
+\newcommand{\barRhoCChiQone}{0.583\xspace}
+\newcommand{\barRhoCChiQtwo}{0.614\xspace}
+\newcommand{\barRhoCChiQthree}{0.623\xspace}
+\newcommand{\barRhoCChiQfour}{0.623\xspace}
+\newcommand{\barRhoCChiQfive}{0.631\xspace}
+\newcommand{\rhoCGapChi}{0.047\xspace}
+\newcommand{\rhoCChiOffsetMin}{0.047\xspace}
+\newcommand{\rhoCChiOffsetMax}{0.059\xspace}
+\newcommand{\tHacChiQthreeQfour}{0.03\xspace}
+\newcommand{\tHacChiQfourQfive}{0.97\xspace}
+
+% KOSPI-only robustness (subsec:checks, subsec:main_result, tab:robustness_summary)
+\newcommand{\rhoCGapKospi}{0.068\xspace}
+
+% Panel construction (tab:settings)
+\newcommand{\noTradeShareKr}{2.2\%\xspace}
+\newcommand{\noTradeShareTw}{0.8\%\xspace}
+
+% Within-sector robustness (subsec:main_result, subsec:size_confounds, tab:robustness_contrast)
+\newcommand{\rhoCGapWithinSector}{0.048\xspace}
+\newcommand{\rhoCGapWithinSectorPctOfHeadline}{81\%\xspace}
+\newcommand{\rhoCGapWithinSectorFloorMin}{0.048\xspace}
+\newcommand{\rhoCGapWithinSectorFloorMax}{0.050\xspace}
+
+% RMT-cleaned rho_c (subsec:main_result, tab:robustness_summary)
+\newcommand{\barRhoCRmtQone}{0.497\xspace}
+\newcommand{\barRhoCRmtQtwo}{0.533\xspace}
+\newcommand{\barRhoCRmtQthree}{0.543\xspace}
+\newcommand{\barRhoCRmtQfour}{0.553\xspace}
+\newcommand{\barRhoCRmtQfive}{0.565\xspace}
+\newcommand{\rhoCGapRmt}{0.068\xspace}
+
+% Subperiod stability (subsec:subperiod, tab:subperiod)
+\newcommand{\tHacEndpointEarly}{8.3\xspace}
+\newcommand{\tHacEndpointLate}{3.0\xspace}
+\newcommand{\tHacEndpointEarlyTw}{10.2\xspace}
+\newcommand{\tHacEndpointLateTw}{12.9\xspace}
+\newcommand{\rhoCGapEndpointEarly}{+0.097\xspace}
+\newcommand{\rhoCGapEndpointLate}{+0.023\xspace}
+\newcommand{\rhoCGapEndpointEarlyTw}{+0.120\xspace}
+\newcommand{\rhoCGapEndpointLateTw}{+0.104\xspace}
+\newcommand{\pBootEndpointLate}{2.1 \times 10^{-3}\xspace}
+\newcommand{\fracWindowsLateQoneLtQfive}{71\%\xspace}
+\newcommand{\rhoCGapLateShareOfEarlyPct}{23\%\xspace}
+\newcommand{\rhoCGapLateShareOfEarlyTwPct}{86\%\xspace}
+\newcommand{\krUnresolvedBlock}{2015--2019\xspace}
+\newcommand{\yearBlockA}{2005--2009\xspace}
+\newcommand{\tHacYearBlockKrA}{8.2\xspace}
+\newcommand{\tHacYearBlockTwA}{7.9\xspace}
+\newcommand{\yearBlockB}{2010--2014\xspace}
+\newcommand{\tHacYearBlockKrB}{5.8\xspace}
+\newcommand{\tHacYearBlockTwB}{8.4\xspace}
+\newcommand{\yearBlockC}{2015--2019\xspace}
+\newcommand{\tHacYearBlockKrC}{1.6\xspace}
+\newcommand{\tHacYearBlockTwC}{11.6\xspace}
+\newcommand{\yearBlockD}{2020--2025\xspace}
+\newcommand{\tHacYearBlockKrD}{2.8\xspace}
+\newcommand{\tHacYearBlockTwD}{10.5\xspace}
+
+% Second-half subsample (subsec:subperiod)
+\newcommand{\nWindowsSecondHalf}{129\xspace}
+\newcommand{\secondHalfStart}{2015-07-22\xspace}
+\newcommand{\tHacSecondHalfQoneQtwo}{6.3\xspace}
+\newcommand{\rhoCStepSecondHalfQoneQtwo}{+0.030\xspace}
+\newcommand{\tHacSecondHalfQtwoQthree}{-0.1\xspace}
+\newcommand{\tHacSecondHalfQthreeQfour}{1.2\xspace}
+\newcommand{\tHacSecondHalfQfourQfive}{-2.2\xspace}
+\newcommand{\rhoCStepSecondHalfQfourQfive}{-0.012\xspace}
+\newcommand{\rhoCSecondHalfInteriorSpan}{0.005\xspace}
+
+% Taiwan re-run (subsec:taiwan, tab:taiwan_rerun, subsec:threshold_vs_mean)
+\newcommand{\medianStocksTwQone}{262\xspace}
+\newcommand{\barRhoCTwQone}{0.521\xspace}
+\newcommand{\barRhoCChiTwQone}{0.578\xspace}
+\newcommand{\medianStocksTwQtwo}{285\xspace}
+\newcommand{\barRhoCTwQtwo}{0.577\xspace}
+\newcommand{\barRhoCChiTwQtwo}{0.641\xspace}
+\newcommand{\medianStocksTwQthree}{290\xspace}
+\newcommand{\barRhoCTwQthree}{0.609\xspace}
+\newcommand{\barRhoCChiTwQthree}{0.657\xspace}
+\newcommand{\medianStocksTwQfour}{292\xspace}
+\newcommand{\barRhoCTwQfour}{0.635\xspace}
+\newcommand{\barRhoCChiTwQfour}{0.671\xspace}
+\newcommand{\medianStocksTwQfive}{296\xspace}
+\newcommand{\barRhoCTwQfive}{0.633\xspace}
+\newcommand{\barRhoCChiTwQfive}{0.666\xspace}
+\newcommand{\rhoCGapTw}{0.112\xspace}
+\newcommand{\rhoCGapTwQFiveMinusQFour}{-0.002\xspace}
+\newcommand{\nWindowsTw}{256\xspace}
+\newcommand{\rhoCGapTwNImplied}{0.006\xspace}
+\newcommand{\rhoCGapTwNImpliedPct}{5\%\xspace}
+\newcommand{\rhoCGapKrNImplied}{0.003\xspace}
+\newcommand{\rhoCGapKrNImpliedPct}{5\%\xspace}
+\newcommand{\fracWindowsQoneLtQfiveTw}{96\%\xspace}
+\newcommand{\tHacTwQoneQtwo}{11.1\xspace}
+\newcommand{\pBlockBootTwQoneQtwo}{10^{-4}\xspace}
+\newcommand{\tHacTwQtwoQthree}{7.3\xspace}
+\newcommand{\pBlockBootTwQtwoQthree}{10^{-4}\xspace}
+\newcommand{\tHacTwQthreeQfour}{8.4\xspace}
+\newcommand{\pBlockBootTwQthreeQfour}{10^{-4}\xspace}
+\newcommand{\tHacTwQfourQfive}{-0.7\xspace}
+\newcommand{\pBlockBootTwQfourQfive}{0.77\xspace}
+\newcommand{\tHacTwQoneQfive}{15.6\xspace}
+\newcommand{\pBlockBootTwQoneQfive}{10^{-4}\xspace}
+\newcommand{\tHacTwChiQoneQfive}{11.9\xspace}
+\newcommand{\tHacTwChiStepMin}{4.9\xspace}
+\newcommand{\tHacTwChiStepMax}{15.4\xspace}
+\newcommand{\tHacTwChiQfourQfive}{-1.2\xspace}
+
+% Shuffled-returns null (subsec:checks, subsec:main_result, tab:robustness_summary)
+\newcommand{\shuffNullRhoCQone}{0.376\xspace}
+\newcommand{\shuffNullRhoCQtwo}{0.376\xspace}
+\newcommand{\shuffNullRhoCQthree}{0.374\xspace}
+\newcommand{\shuffNullRhoCQfour}{0.371\xspace}
+\newcommand{\shuffNullRhoCQfive}{0.368\xspace}
+\newcommand{\shuffNullGapQFiveMinusQone}{-0.008\xspace}
+\newcommand{\nShuffleSeeds}{20\xspace}
+\newcommand{\shuffNullSeedSdMax}{0.0004\xspace}
+
+% Per-quintile excess kurtosis of daily returns (subsec:null_robustness)
+\newcommand{\excessKurtQone}{3.8\xspace}
+\newcommand{\excessKurtQfive}{2.0\xspace}
+
+% Window-length sensitivity (subsec:checks, subsec:main_result, tab:robustness_summary)
+\newcommand{\barRhoCWthirtyQone}{0.630\xspace}
+\newcommand{\barRhoCWthirtyQtwo}{0.654\xspace}
+\newcommand{\barRhoCWthirtyQthree}{0.664\xspace}
+\newcommand{\barRhoCWthirtyQfour}{0.665\xspace}
+\newcommand{\barRhoCWthirtyQfive}{0.668\xspace}
+\newcommand{\barRhoCWhundredtwentyQone}{0.443\xspace}
+\newcommand{\barRhoCWhundredtwentyQtwo}{0.480\xspace}
+\newcommand{\barRhoCWhundredtwentyQthree}{0.493\xspace}
+\newcommand{\barRhoCWhundredtwentyQfour}{0.509\xspace}
+\newcommand{\barRhoCWhundredtwentyQfive}{0.531\xspace}
+\newcommand{\barRhoCWtwofiftyQone}{0.380\xspace}
+\newcommand{\barRhoCWtwofiftyQtwo}{0.423\xspace}
+\newcommand{\barRhoCWtwofiftyQthree}{0.437\xspace}
+\newcommand{\barRhoCWtwofiftyQfour}{0.455\xspace}
+\newcommand{\barRhoCWtwofiftyQfive}{0.495\xspace}
+\newcommand{\windowDaysWthirty}{30\xspace}
+\newcommand{\rhoCGapWthirty}{0.038\xspace}
+\newcommand{\nWindowsWthirty}{258\xspace}
+\newcommand{\windowDaysWhundredtwenty}{120\xspace}
+\newcommand{\rhoCGapWhundredtwenty}{0.088\xspace}
+\newcommand{\nWindowsWhundredtwenty}{254\xspace}
+\newcommand{\windowDaysWtwofifty}{252\xspace}
+\newcommand{\rhoCGapWtwofifty}{0.115\xspace}
+\newcommand{\nWindowsWtwofifty}{247\xspace}
+
+% Observation-requirement sensitivity (subsec:checks, subsec:researcher_choices, tab:robustness_summary)
+\newcommand{\minValidFractionLoPct}{70\%\xspace}
+\newcommand{\minValidFractionHiPct}{90\%\xspace}
+\newcommand{\barRhoCObsReqLoQone}{0.525\xspace}
+\newcommand{\barRhoCObsReqLoQtwo}{0.557\xspace}
+\newcommand{\barRhoCObsReqLoQthree}{0.566\xspace}
+\newcommand{\barRhoCObsReqLoQfour}{0.576\xspace}
+\newcommand{\barRhoCObsReqLoQfive}{0.584\xspace}
+\newcommand{\rhoCGapObsReqLo}{0.058\xspace}
+\newcommand{\barRhoCObsReqHiQone}{0.524\xspace}
+\newcommand{\barRhoCObsReqHiQtwo}{0.556\xspace}
+\newcommand{\barRhoCObsReqHiQthree}{0.567\xspace}
+\newcommand{\barRhoCObsReqHiQfour}{0.576\xspace}
+\newcommand{\barRhoCObsReqHiQfive}{0.584\xspace}
+\newcommand{\rhoCGapObsReqHi}{0.060\xspace}
+
+% Marchenko-Pastur noise band (subsec:checks)
+\newcommand{\mpLambdaMinus}{1.53\xspace}
+\newcommand{\mpLambdaPlus}{10.47\xspace}
+
+% Residualization: adjacent steps and endpoint of rho_c (subsec:residuals, tab:residual_steps)
+\newcommand{\rhoCStepHeadlineQoneQtwo}{+0.032\xspace}
+\newcommand{\rhoCStepHeadlineQtwoQthree}{+0.010\xspace}
+\newcommand{\rhoCStepHeadlineQthreeQfour}{+0.009\xspace}
+\newcommand{\rhoCStepHeadlineQfourQfive}{+0.008\xspace}
+\newcommand{\rhoCRiseQoneQfourHeadline}{+0.052\xspace}
+\newcommand{\rhoCStepMktResidQoneQtwo}{+0.014\xspace}
+\newcommand{\tHacMktResidQoneQtwo}{5.7\xspace}
+\newcommand{\rhoCStepMktResidQtwoQthree}{-0.001\xspace}
+\newcommand{\tHacMktResidQtwoQthree}{-0.4\xspace}
+\newcommand{\rhoCStepMktResidQthreeQfour}{-0.009\xspace}
+\newcommand{\tHacMktResidQthreeQfour}{-4.1\xspace}
+\newcommand{\rhoCStepMktResidQfourQfive}{+0.001\xspace}
+\newcommand{\tHacMktResidQfourQfive}{0.5\xspace}
+\newcommand{\rhoCGapMktResid}{+0.006\xspace}
+\newcommand{\tHacMktResidQoneQfive}{1.3\xspace}
+\newcommand{\rhoCStepMktResidEwQoneQtwo}{+0.004\xspace}
+\newcommand{\tHacMktResidEwQoneQtwo}{3.2\xspace}
+\newcommand{\rhoCStepMktResidEwQtwoQthree}{-0.001\xspace}
+\newcommand{\tHacMktResidEwQtwoQthree}{-0.5\xspace}
+\newcommand{\rhoCStepMktResidEwQthreeQfour}{+0.006\xspace}
+\newcommand{\tHacMktResidEwQthreeQfour}{5.2\xspace}
+\newcommand{\rhoCStepMktResidEwQfourQfive}{+0.049\xspace}
+\newcommand{\tHacMktResidEwQfourQfive}{16.6\xspace}
+\newcommand{\rhoCGapMktResidEw}{+0.058\xspace}
+\newcommand{\tHacMktResidEwQoneQfive}{17.7\xspace}
+\newcommand{\rhoCStepMktSecResidQoneQtwo}{+0.003\xspace}
+\newcommand{\tHacMktSecResidQoneQtwo}{1.8\xspace}
+\newcommand{\rhoCStepMktSecResidQtwoQthree}{-0.005\xspace}
+\newcommand{\tHacMktSecResidQtwoQthree}{-3.4\xspace}
+\newcommand{\rhoCStepMktSecResidQthreeQfour}{-0.010\xspace}
+\newcommand{\tHacMktSecResidQthreeQfour}{-4.9\xspace}
+\newcommand{\rhoCStepMktSecResidQfourQfive}{+0.001\xspace}
+\newcommand{\tHacMktSecResidQfourQfive}{0.4\xspace}
+\newcommand{\rhoCGapMktSecResid}{-0.011\xspace}
+\newcommand{\tHacMktSecResidQoneQfive}{-3.8\xspace}
+\newcommand{\rhoCStepMktSecResidEwQoneQtwo}{-0.000\xspace}
+\newcommand{\tHacMktSecResidEwQoneQtwo}{-0.4\xspace}
+\newcommand{\rhoCStepMktSecResidEwQtwoQthree}{-0.002\xspace}
+\newcommand{\tHacMktSecResidEwQtwoQthree}{-2.8\xspace}
+\newcommand{\rhoCStepMktSecResidEwQthreeQfour}{-0.002\xspace}
+\newcommand{\tHacMktSecResidEwQthreeQfour}{-2.5\xspace}
+\newcommand{\rhoCStepMktSecResidEwQfourQfive}{+0.026\xspace}
+\newcommand{\tHacMktSecResidEwQfourQfive}{18.5\xspace}
+\newcommand{\rhoCGapMktSecResidEw}{+0.021\xspace}
+\newcommand{\tHacMktSecResidEwQoneQfive}{10.0\xspace}
+\newcommand{\rhoCRiseQoneQfourResidMin}{-0.012\xspace}
+\newcommand{\rhoCRiseQoneQfourResidMax}{+0.010\xspace}
+
+% KOSPI-only robustness (subsec:checks, subsec:main_result, tab:robustness_summary)
+\newcommand{\barRhoCKospiQone}{0.514\xspace}
+\newcommand{\medianStocksKospiQone}{145\xspace}
+\newcommand{\barRhoCKospiQtwo}{0.539\xspace}
+\newcommand{\barRhoCKospiQthree}{0.540\xspace}
+\newcommand{\barRhoCKospiQfour}{0.535\xspace}
+\newcommand{\barRhoCKospiQfive}{0.582\xspace}
+\newcommand{\medianStocksKospiQfive}{149\xspace}
+\newcommand{\nWindowsKospi}{257\xspace}
+\newcommand{\nKospiTickers}{1{,}020\xspace}
+
+% Within-sector per-quintile (subsec:size_confounds, tab:robustness_summary)
+\newcommand{\barRhoCWithinSectorQone}{0.529\xspace}
+\newcommand{\medianStocksWithinSectorQone}{281\xspace}
+\newcommand{\barRhoCWithinSectorQtwo}{0.554\xspace}
+\newcommand{\barRhoCWithinSectorQthree}{0.566\xspace}
+\newcommand{\barRhoCWithinSectorQfour}{0.569\xspace}
+\newcommand{\barRhoCWithinSectorQfive}{0.577\xspace}
+\newcommand{\medianStocksWithinSectorQfive}{294\xspace}
+\newcommand{\nWindowsWithinSector}{257\xspace}
+
+% DGP eq:toy_threshold/eq:toy_closed_form verification (si:eq9_verification)
+\newcommand{\rhoCDgpSimDeltaA}{0.668\xspace}
+\newcommand{\rhoCDgpSimDegOneDeltaA}{0.667\xspace}
+\newcommand{\rhoCDgpClosedDeltaA}{0.811\xspace}
+\newcommand{\rhoCDgpSimDeltaB}{0.626\xspace}
+\newcommand{\rhoCDgpSimDegOneDeltaB}{0.620\xspace}
+\newcommand{\rhoCDgpClosedDeltaB}{0.743\xspace}
+\newcommand{\rhoCDgpSimDeltaC}{0.575\xspace}
+\newcommand{\rhoCDgpSimDegOneDeltaC}{0.571\xspace}
+\newcommand{\rhoCDgpClosedDeltaC}{0.667\xspace}
+\newcommand{\rhoCDgpSimDeltaD}{0.537\xspace}
+\newcommand{\rhoCDgpSimDegOneDeltaD}{0.534\xspace}
+\newcommand{\rhoCDgpClosedDeltaD}{0.608\xspace}
+\newcommand{\rhoCDgpSimDeltaE}{0.493\xspace}
+\newcommand{\rhoCDgpSimDegOneDeltaE}{0.484\xspace}
+\newcommand{\rhoCDgpClosedDeltaE}{0.528\xspace}
+\newcommand{\rhoCDgpSimSectorDeltaA}{0.715\xspace}
+\newcommand{\rhoCDgpSimSectorDegOneDeltaA}{0.722\xspace}
+\newcommand{\rhoCDgpClosedSectorDeltaA}{0.901\xspace}
+\newcommand{\rhoCDgpSimSectorDeltaB}{0.640\xspace}
+\newcommand{\rhoCDgpSimSectorDegOneDeltaB}{0.642\xspace}
+\newcommand{\rhoCDgpClosedSectorDeltaB}{0.780\xspace}
+\newcommand{\rhoCDgpSimSectorDeltaC}{0.582\xspace}
+\newcommand{\rhoCDgpSimSectorDegOneDeltaC}{0.581\xspace}
+\newcommand{\rhoCDgpClosedSectorDeltaC}{0.687\xspace}
+\newcommand{\rhoCDgpSimSectorDeltaD}{0.542\xspace}
+\newcommand{\rhoCDgpSimSectorDegOneDeltaD}{0.535\xspace}
+\newcommand{\rhoCDgpClosedSectorDeltaD}{0.610\xspace}
+\newcommand{\rhoCDgpSimSectorDeltaE}{0.490\xspace}
+\newcommand{\rhoCDgpSimSectorDegOneDeltaE}{0.483\xspace}
+\newcommand{\rhoCDgpClosedSectorDeltaE}{0.526\xspace}
+\newcommand{\dgpEqEightMaxGap}{0.009\xspace}
+\newcommand{\nDgpEqEightCells}{10\xspace}
+\newcommand{\dgpDegOneMinFall}{0.038\xspace}
+\newcommand{\dgpEqNineOvershootLo}{0.035\xspace}
+\newcommand{\dgpEqNineOvershootHi}{0.186\xspace}
+
+% Empirical rise of rho_c over the network size (subsec:threshold_vs_mean)
+\newcommand{\dgpNScalingDriftEmpiricalLo}{0.093\xspace}
+\newcommand{\dgpNScalingDriftEmpiricalHi}{0.106\xspace}
+
+% DGP simulation constants (si:dgp_validation)
+\newcommand{\dgpSigmaF}{0.007\xspace}
+\newcommand{\dgpSigmaU}{0.02\xspace}
+\newcommand{\dgpSigmaFUnscaled}{0.010\xspace}
+\newcommand{\dgpSigmaFScale}{0.70\xspace}
+\newcommand{\dgpBetaMean}{1.0\xspace}
+\newcommand{\dgpBetaStd}{0.3\xspace}
+\newcommand{\dgpBetaLo}{0.2\xspace}
+\newcommand{\dgpBetaHi}{2.0\xspace}
+\newcommand{\dgpKnnK}{5\xspace}
+\newcommand{\dgpNSectors}{10\xspace}
+\newcommand{\dgpIntraWeight}{1.0\xspace}
+\newcommand{\dgpInterWeight}{0.1\xspace}
+\newcommand{\dgpN}{300\xspace}
+\newcommand{\dgpT}{60\xspace}
+\newcommand{\dgpDeltaGridMin}{0.40\xspace}
+\newcommand{\dgpDeltaGridMax}{0.85\xspace}
+\newcommand{\dgpEqNineNMc}{100\xspace}
+% === END GENERATED REGION ===
+
+
+% === BEGIN MANUAL REGION ===
+
+% Dataset description, the scan grid, the sector floor, and the figure's
+% display smoothing are all GENERATED, from the constants that fix
+% them in code and from the realized window dates, via scripts/generate_params.py.
+% A design constant already fixed in a script has its source of truth there, so
+% neither region is where it is decided: writing the value out here a second time
+% is what goes stale the day the script's value moves, with nothing to detect it.
+% \paperWindowDays, \paperStepDays, \paperPerQuintile (constants.py),
+% \minValidFractionPct (MIN_VALID_FRACTION), \minSectorSize (MIN_SECTOR_SIZE),
+% \minSectorSizeLo / \minSectorSizeHi (FLOORS in
+% scripts/confounds/run_within_sector.py), \rollingMASteps
+% (MA_WINDOW in generate_figures.py), \paperSampleStart / \paperSampleEnd and \twPanelStart / \twPanelEnd (the
+% realized panel coverage) all left this region for that reason.
+
+% === END MANUAL REGION ===

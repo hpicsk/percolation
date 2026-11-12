@@ -1,0 +1,2 @@
+spearman,rho_c_gap_q1q5,mean_abs_corr_gap_q1q5,resid_gap_q1q5,resid_gap_share_of_rho_c_gap,resid_monotone,n_cells
+0.9517703961820592,0.05969033641334287,0.024898941323204582,0.019562564789886626,0.3277342023073891,True,1285

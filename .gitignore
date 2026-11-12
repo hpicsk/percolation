@@ -1,0 +1,111 @@
+__pycache__/
+*.pyc
+*.egg-info/
+logs/
+paper/paper.aux
+paper/paper.bbl
+paper/paper.blg
+paper/paper.fdb_latexmk
+paper/paper.fls
+paper/paper.log
+paper/paper.out
+
+# Local Claude Code session state
+.claude/
+
+# Elsevier submission templates (downloaded vendor scaffolding, not pipeline source)
+els-cas-templates/
+els-cas-templates.zip
+els_guide_for_authors
+els_latex
+
+# Pipeline reproduce logs
+reproduce_*.log
+
+# API credentials
+.env
+
+# Local submission bundle (rebuilt on demand, not a pipeline artifact)
+percol_arxiv_submission.zip
+
+# ---------------------------------------------------------------------------
+# The vendor trees. Each is a directory the replicator supplies (README, "Data
+# requirements") and none is redistributable from here: marcap is a clone of a
+# public archive, fnguide a paid DataGuide export, finmind a FinMind download.
+# The panels they produce are committed under data/cache/, so every published
+# table and figure reproduces with all three absent. The two small trees beside
+# them are committed, because nothing outside this repository supplies them.
+# ---------------------------------------------------------------------------
+data/external/*
+!data/external/registry/
+!data/external/krx_supplement/
+
+# ---------------------------------------------------------------------------
+# Pipeline intermediates: written by reproduce.sh, read by no test, no figure,
+# and no parameter macro. They are regenerated from data/cache/ by the stage
+# that owns them, so they are working-directory files rather than published
+# artifacts. Every artifact the paper chain DOES open stays tracked.
+#
+# To re-derive this list after a pipeline change, trace the opens of
+#   pytest test_assertions.py, scripts/generate_params.py, generate_figures.py
+# and subtract the result from `git ls-files data`; anything the trace never
+# opened belongs here. Do not hand-edit: a stale entry silently untracks a
+# published artifact.
+# ---------------------------------------------------------------------------
+data/min_valid_fraction_sensitivity/F0.7/
+data/min_valid_fraction_sensitivity/F0.8/
+data/min_valid_fraction_sensitivity/F0.9/
+data/window_sensitivity/W120/
+data/window_sensitivity/W252/
+data/window_sensitivity/W30/
+data/window_sensitivity/W60/
+data/finite_size/giant_curves_per_N.parquet
+data/korea_headline/rolling_percolation.csv
+data/kospi_only/rolling_percolation.csv
+data/market_residual/rolling_percolation_Q1.csv
+data/market_residual/rolling_percolation_Q2.csv
+data/market_residual/rolling_percolation_Q3.csv
+data/market_residual/rolling_percolation_Q4.csv
+data/market_residual/rolling_percolation_Q5.csv
+data/market_sector_residual/rolling_percolation_Q2.csv
+data/market_sector_residual/rolling_percolation_Q3.csv
+data/market_sector_residual/rolling_percolation_Q4.csv
+data/mean_corr_diagnostic/mean_corr_vs_N.csv
+data/min_valid_fraction_sensitivity/summary_wide.csv
+data/null_shuffled/rho_c_distribution.csv
+data/rmt_filtered/rolling_percolation_Q5.csv
+data/susceptibility/comparison.csv
+data/susceptibility/rolling_percolation.csv
+data/taiwan/rolling_percolation.csv
+data/window_sensitivity/summary_wide.csv
+data/kospi_only/rolling_percolation_per_seed.csv
+data/market_residual/rolling_percolation_per_seed.csv
+data/market_residual_ew/rolling_percolation_per_seed.csv
+data/market_sector_residual/rolling_percolation_per_seed.csv
+data/market_sector_residual_ew/rolling_percolation_per_seed.csv
+data/rmt_filtered/rolling_percolation_per_seed.csv
+data/susceptibility/rolling_percolation_per_seed.csv
+data/weekly_rho_c/per_seed_korea_T252.csv
+data/weekly_rho_c/per_seed_korea_T504.csv
+data/weekly_rho_c/per_seed_taiwan_T252.csv
+data/weekly_rho_c/per_seed_taiwan_T504.csv
+data/within_sector/rolling_percolation_per_seed.csv
+
+# ---------------------------------------------------------------------------
+# BEGIN not-published-by-the-availability-statement
+# test_internal_working_documents_are_untracked finds this block by the
+# marker line above, so the prose below is free to be rewritten.
+#
+# Everything the data-availability statement does not commit to publishing.
+# That statement promises the analysis code and the processed outputs behind
+# every table and figure; a file tracked here that is neither is published as a
+# side effect. Working documents stay under _internal/, and reproduce.sh
+# regenerates the verification report that verify_claim.py writes.
+#
+# A pattern here is inert on a path that was already tracked when the pattern was
+# written, so adding a line does not untrack anything: every file this block
+# names must also be `git rm --cached`-ed once, or the rule reads as enforced
+# while the file keeps publishing.
+# ---------------------------------------------------------------------------
+_internal/*
+reports/verification_report.md

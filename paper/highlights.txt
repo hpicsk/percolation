@@ -1,0 +1,11 @@
+Highlights
+
+Firm Size and the Percolation Threshold of Stock-Return Correlation Networks: Evidence from Korea and Taiwan
+
+Sungwoo Kang, Jong-Kook Kim
+
+- Correlation-network percolation thresholds rise with firm size to the fourth quintile
+- Korean thresholds average 0.524 in the smallest and 0.584 in the largest quintile
+- In Korea and Taiwan, each rise to the next quintile up to the fourth is significant
+- In Korea, adding stocks raises a network's threshold but hardly its mean correlation
+- Under stated conditions, a model with no calibrated parameter predicts the rise

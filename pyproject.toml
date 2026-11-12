@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fn_percolation"
+version = "0.1.0"
+description = "Replication package for Kang and Kim (2026), percolation thresholds of thin-market correlation networks."
+requires-python = ">=3.11"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["fn_percolation"]
