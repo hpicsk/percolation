@@ -52,14 +52,13 @@ data/external/*
 # opened belongs here. Do not hand-edit: a stale entry silently untracks a
 # published artifact.
 # ---------------------------------------------------------------------------
-data/min_valid_fraction_sensitivity/F0.7/
 data/min_valid_fraction_sensitivity/F0.8/
-data/min_valid_fraction_sensitivity/F0.9/
-data/window_sensitivity/W120/
-data/window_sensitivity/W252/
-data/window_sensitivity/W30/
 data/window_sensitivity/W60/
-data/finite_size/giant_curves_per_N.parquet
+data/min_valid_fraction_sensitivity/F0.7/rolling_percolation_per_seed.csv
+data/min_valid_fraction_sensitivity/F0.9/rolling_percolation_per_seed.csv
+data/window_sensitivity/W120/rolling_percolation_per_seed.csv
+data/window_sensitivity/W252/rolling_percolation_per_seed.csv
+data/window_sensitivity/W30/rolling_percolation_per_seed.csv
 data/korea_headline/rolling_percolation.csv
 data/kospi_only/rolling_percolation.csv
 data/market_residual/rolling_percolation_Q1.csv

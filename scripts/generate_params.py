@@ -33,7 +33,8 @@ from fn_percolation.constants import (
 )
 from fn_percolation.network_utils import SPLINE_MESH_SIZE
 from fn_percolation.overlap_inference import (BLOCK_BOOT_DRAWS, block_length,
-                                               hac_block_stats, hac_mean_se)
+                                               hac_block_stats, hac_mean_se,
+                                               overlap_span)
 from fn_percolation.rmt import marchenko_pastur_bounds
 from fn_percolation.dgp import (
     DEFAULT_BETA_CLIP,
@@ -269,6 +270,11 @@ def _design_constant_macros() -> list[tuple[str, str, str]]:
         (header, "paperPerQuintile", f"{PER_QUINTILE}"),
         (header, "minValidFractionPct", _fmt(100.0 * MIN_VALID_FRACTION, 0) + r"\%"),
         (header, "minSectorSize", f"{MIN_SECTOR_SIZE}"),
+        # The fewest stocks that a kept sector places in each within-sector
+        # quintile: sector_loader cuts the sector's size ranks into equal
+        # quintiles, so a sector of MIN_SECTOR_SIZE stocks places
+        # MIN_SECTOR_SIZE // 5 in each (subsec:checks).
+        (header, "minSectorStocksPerQuintile", f"{MIN_SECTOR_SIZE // len(QUINTILE_NAMES)}"),
         # The sensitivity sweep brackets the published floor; the two bracketing
         # values are its extremes, not a third and fourth constant to fix here.
         (header, "minSectorSizeLo", f"{min(floors)}"),
@@ -281,18 +287,18 @@ def _design_constant_macros() -> list[tuple[str, str, str]]:
     # The moving-block bootstrap of subsec:inference: its draw count, and the
     # block length its rule gives at the Korean window count.
     out.append((header, "blockBootDraws", f"{BLOCK_BOOT_DRAWS:,}".replace(",", "{,}")))
-    # The network-size resampling of subsec:threshold_vs_mean: its grid of N
+    # The network-size resampling of subsec:resampling_method: its grid of N
     # and the stride at which it sub-samples the rolling windows.
-    n_grid = sorted(_module_constant("scripts/scaling/run_mean_corr_vs_N.py", "N_GRID"))
+    n_grid = sorted(_module_constant("scripts/scaling/run_rho_c_vs_N.py", "N_GRID"))
     spacing = {b - a for a, b in zip(n_grid, n_grid[1:])}
     if len(spacing) != 1:
         sys.exit("subsec:methods prints the network-size grid as evenly spaced, "
-                 f"but run_mean_corr_vs_N.py's N_GRID is {n_grid}.")
+                 f"but run_rho_c_vs_N.py's N_GRID is {n_grid}.")
     out.append((header, "networkSizeNMin", f"{n_grid[0]}"))
     out.append((header, "networkSizeNMax", f"{n_grid[-1]}"))
     out.append((header, "networkSizeNStep", f"{spacing.pop()}"))
     out.append((header, "networkSizeWindowStride",
-                f"{_module_constant('scripts/scaling/run_mean_corr_vs_N.py', 'SUBSAMPLE_STEP')}"))
+                f"{_module_constant('scripts/scaling/run_rho_c_vs_N.py', 'SUBSAMPLE_STEP')}"))
     # Korean panel coverage, read off the realized window dates rather than
     # typed: the panel's bounds are what the loader returned, not a convention.
     head = _safe_read_csv(DATA / "korea_headline" / "rolling_percolation_Q1.csv")
@@ -392,6 +398,11 @@ def _draw_seed_macros() -> list[tuple[str, str, str]]:
     header = ("Draw seeds and the spread of each step across the draws "
               "(subsec:methods, subsec:inference, tab:step_robustness)")
     out = [(header, "nDrawSeeds", f"{N_DRAW_SEEDS}")]
+    # Which steps subsec:inference finds significant at the automatic bandwidth.
+    verdicts = _read_csv(DATA / "bandwidth_sensitivity" / "steps.csv")
+    verdicts = verdicts[verdicts["bandwidth"] == "automatic"].set_index(
+        ["market", "pair"])["significant"]
+    ratios = []
     for market, mk in MARKET_NAMES.items():
         subdir = "korea_headline" if market == "korea" else market
         per_seed = _read_csv(DATA / subdir / "rolling_percolation_per_seed.csv")
@@ -403,6 +414,11 @@ def _draw_seed_macros() -> list[tuple[str, str, str]]:
             step_means = (wide[hi] - wide[lo]).groupby(level="seed").mean()
             sd = float(step_means.std(ddof=1))
             out.append((header, f"sdDraw{mk}{_pair_name(lo, hi)}", _fmt(sd, 4)))
+            if bool(verdicts[(market, f"Q{lo}-Q{hi}")]):
+                ratios.append(float(step_means.mean()) / sd)
+    # tab:step_robustness's text bounds every significant step from below as a
+    # multiple of its spread across the draws, so the bound is rounded down.
+    out.append((header, "stepDrawSpreadRatioMin", _fmt_bound(min(ratios), 1, "lo")))
     # Draws whose rho_c reaches the upper edge of the rho* scan grid, where the
     # edge bounds rho_c rather than measuring it (subsec:methods).
     kr = _read_csv(DATA / "korea_headline" / "rolling_percolation_per_seed.csv")
@@ -432,14 +448,6 @@ def _bandwidth_macros() -> list[tuple[str, str, str]]:
         out.append((header, f"tHacBw{name}", _fmt(float(r["hac_t"]), 1)))
         out.append((header, f"pBlockBootBw{name}",
                     _fmt_block_p_cell(float(r["block_p"]))))
-    # The smallest HAC t, at either longer bandwidth, of the steps and contrasts
-    # that subsec:inference finds significant at the automatic bandwidth.
-    auto = steps[steps["bandwidth"] == "automatic"].set_index(
-        ["market", "pair"])["significant"]
-    longer = steps[steps["bandwidth"] != "automatic"]
-    kept = longer[[bool(auto[(m, q)]) for m, q in zip(longer["market"], longer["pair"])]]
-    out.append((header, "tHacBwMinSignificant",
-                _fmt_bound(float(kept["hac_t"].min()), 1, "lo")))
     return out
 
 
@@ -504,6 +512,73 @@ def _kospi_resolution_macros() -> list[tuple[str, str, str]]:
     limits = [z * hac_mean_se((panel[hi] - panel[lo]).to_numpy())["se"]
               for lo, hi in ((2, 3), (3, 4))]
     return [(header, "kospiDetectMin", _fmt_bound(min(limits), 3, "lo"))]
+
+
+def _setting_step_macros() -> list[tuple[str, str, str]]:
+    """One-sided tests of each Korean step and of the endpoint contrast at each
+    window length and observation requirement of the estimation-settings check
+    (subsec:researcher_choices, tab:setting_steps). Where the windows of a
+    setting share returns at more lags than the automatic bandwidth or block
+    length covers, both are raised to one more than the largest such lag, the
+    rule of the weekly-threshold check (subsec:checks). The detection limits are
+    the steps that the 30-day test and the test of rho_c^chi detect with 80%
+    power at the 5% level, by the resolution rule of run_weekly_rho_c.py, which
+    subsec:researcher_choices compares with the Q3-Q4 step of the main
+    estimate. Each is rounded up, because the comparison needs an upper bound."""
+    header = "Steps under the estimation settings (subsec:researcher_choices, tab:setting_steps)"
+    z = (_module_constant("scripts/stability/run_weekly_rho_c.py", "Z_ALPHA_ONE_SIDED")
+         + _module_constant("scripts/stability/run_weekly_rho_c.py", "Z_POWER"))
+    sweeps = _module_constant("scripts/sensitivity/run_pipeline_sensitivity.py", "SWEEPS")
+    windows = sweeps["window_sensitivity"].values
+    fractions = sweeps["min_valid_fraction_sensitivity"].values
+    names = {30: "Wthirty", 120: "Whundredtwenty", 252: "Wtwofifty"}
+    if sorted(w for w in windows if w != WINDOW) != sorted(names):
+        sys.exit(f"tab:setting_steps prints the window lengths {sorted(names)}, "
+                 f"but run_pipeline_sensitivity.py sweeps {windows}.")
+    settings = [(names[w], DATA / "window_sensitivity" / f"W{w}", w)
+                for w in windows if w != WINDOW]
+    settings += [("ObsReqLo", DATA / "min_valid_fraction_sensitivity" / f"F{min(fractions)}", WINDOW),
+                 ("ObsReqHi", DATA / "min_valid_fraction_sensitivity" / f"F{max(fractions)}", WINDOW)]
+    pairs = ((1, 2), (2, 3), (3, 4), (4, 5), (1, 5))
+    out: list[tuple[str, str, str]] = []
+    for name, folder, window in settings:
+        panel = pd.concat(
+            {g: _read_csv(folder / f"rolling_percolation_Q{g}.csv",
+                          index_col="date")["rho_c"] for g in QUINTILE_NAMES},
+            axis=1).dropna()
+        lag = overlap_span(window, STEP) + 1
+        for lo, hi in pairs:
+            stats = hac_block_stats((panel[hi] - panel[lo]).to_numpy(),
+                                    min_lag=lag, min_block=lag)
+            pair = f"{QUINTILE_NAMES[lo]}{QUINTILE_NAMES[hi]}"
+            out.append((header, f"tHac{name}{pair}", _fmt(stats["nw_t"], 1)))
+            out.append((header, f"pBoot{name}{pair}",
+                        _fmt_block_p_cell(stats["block_boot_p_one_sided"])))
+            if name == "Wthirty" and (lo, hi) == (3, 4):
+                se = stats["mean_diff"] / stats["nw_t"]
+                out.append((header, "detectWthirtyQthreeQfour", _fmt_bound(z * se, 3, "hi")))
+    chi = pd.concat(
+        {g: _read_csv(DATA / "susceptibility" / f"rolling_percolation_Q{g}.csv",
+                      index_col="date")["rho_c_chi"] for g in (3, 4)},
+        axis=1).dropna()
+    se = hac_mean_se((chi[4] - chi[3]).to_numpy())["se"]
+    out.append((header, "detectChiQthreeQfour", _fmt_bound(z * se, 3, "hi")))
+    # subsec:size_confounds compares the within-sector limit with the main
+    # Q3-Q4 step at four decimals, where three decimals cannot order them; the
+    # limit is rounded down and the step up, so the printed order holds.
+    ws = pd.concat(
+        {g: _read_csv(DATA / "within_sector" / f"rolling_percolation_Q{g}.csv",
+                      index_col="date")["rho_c"] for g in (3, 4)},
+        axis=1).dropna()
+    out.append((header, "detectWithinSectorQthreeQfour",
+                _fmt_bound(z * hac_mean_se((ws[4] - ws[3]).to_numpy())["se"], 4, "lo")))
+    main = pd.concat(
+        {g: _read_csv(DATA / "korea_headline" / f"rolling_percolation_Q{g}.csv",
+                      index_col="date")["rho_c"] for g in (3, 4)},
+        axis=1).dropna()
+    out.append((header, "rhoCStepHeadlineQthreeQfourFine",
+                _fmt_bound(float((main[4] - main[3]).mean()), 4, "hi")))
+    return out
 
 
 def _control_arm_hac_macros() -> list[tuple[str, str, str]]:
@@ -635,14 +710,20 @@ def _mean_corr_macros() -> list[tuple[str, str, str]]:
         fit = np.polyval(np.polyfit(cells["mean_abs_corr"], cells["rho_c"], deg),
                          cells["mean_abs_corr"])
         resid = (cells["rho_c"] - fit).groupby(cells["quintile"]).mean()
-        if not all(a < b for a, b in zip(resid, resid.iloc[1:])):
-            sys.exit(f"degree-{deg} residual ordering is not strict; "
-                     "subsec:threshold_vs_mean claims it is at every degree")
         shares.append((resid[5] - resid[1]) / (raw[5] - raw[1]))
+        if deg == 3:
+            # HAC t of the cubic's residual endpoint contrast, on the per-window
+            # differences that subsec:inference tests (subsec:threshold_vs_mean).
+            per_window = (cells.assign(resid=cells["rho_c"] - fit)
+                          .pivot(index="date", columns="quintile", values="resid"))
+            endpoint_t = hac_block_stats(
+                (per_window[5] - per_window[1]).to_numpy())["nw_t"]
     for name, val in (("rhoCResidGapPctOfRawDegLo", min(shares)),
                       ("rhoCResidGapPctOfRawDegHi", max(shares))):
         out.append(("rho_c / mean |rho| coupling (subsec:threshold_vs_mean)",
                     name, _fmt(val * 100, 0) + r"\%"))
+    out.append(("rho_c / mean |rho| coupling (subsec:threshold_vs_mean)",
+                "tHacMeanCorrResidQoneQfive", _fmt(endpoint_t, 1)))
 
     # Per-quintile mean off-diagonal |rho_ij| (tab:percolation final row, co-movement row).
     summary = _safe_read_csv(
@@ -656,44 +737,31 @@ def _mean_corr_macros() -> list[tuple[str, str, str]]:
                 f"meanAbsCorr{QUINTILE_NAMES[g]}",
                 _fmt(float(row["mean_abs_corr_mean"]), 3),
             ))
-        # Its Q4-Q5 step from unrounded values, which the three-decimal row
-        # of tab:percolation rounds to 0.001 (subsec:threshold_vs_mean).
-        step = float(summary["mean_abs_corr_mean"].iloc[4] - summary["mean_abs_corr_mean"].iloc[3])
+        # HAC t of its Q1-to-Q5 rise, on the per-window differences that
+        # subsec:inference tests (subsec:threshold_vs_mean).
+        per_window_corr = cells.pivot(index="date", columns="quintile",
+                                      values="mean_abs_corr")
         out.append(("rho_c / mean |rho| coupling (subsec:threshold_vs_mean)",
-                    "meanCorrStepQfourQfive", f"{step:+.4f}"))
+                    "tHacMeanCorrQoneQfive",
+                    _fmt(hac_block_stats(
+                        (per_window_corr[5] - per_window_corr[1]).dropna().to_numpy())["nw_t"], 1)))
     return out
 
 
-def _mean_corr_vs_N_macros() -> list[tuple[str, str, str]]:
-    """Network-size divergence of rho_c from the segment mean |rho| (subsec:threshold_vs_mean).
-
-    The closed-form criterion makes rho_c the upper-tail quantile that rises with
-    N as sigma_delta * sqrt(2 ln(N-1)), while the segment mean |rho_ij| is the
-    first moment and carries no N term. run_mean_corr_vs_N.py fits both on
-    sqrt(2 ln(N-1)) over the network-size grid. rho_c has a steep positive slope
-    and the mean is an order of magnitude flatter, the positive separation the
-    cross-sectional co-movement (meanCorrSpearman) cannot supply."""
+def _rho_c_vs_N_macros() -> list[tuple[str, str, str]]:
+    """Pooled slope of rho_c on sqrt(2 ln(N-1)) over the network-size grid
+    (subsec:resampling_method, subsec:threshold_vs_mean), which run_rho_c_vs_N.py
+    fits; eq:toy_closed_form makes it sigma_delta."""
     out: list[tuple[str, str, str]] = []
     slopes = _safe_read_csv(
-        DATA / "mean_corr_diagnostic" / "mean_corr_vs_N_slopes.csv")
+        DATA / "network_size_resampling" / "rho_c_vs_N_slopes.csv")
     if slopes is None or slopes.empty:
         return out
-    header = "rho_c vs mean |rho| network-size divergence (subsec:threshold_vs_mean)"
+    header = "rho_c over the network size (subsec:threshold_vs_mean)"
     pooled = slopes[slopes["quintile"] == 0]
-    per_q = slopes[slopes["quintile"] != 0]
     if not pooled.empty:
-        r = pooled.iloc[0]
         out.append((header, "rhoCSlopeSqrtLogN",
-                    _fmt(float(r["rho_c_slope"]), 3)))
-        out.append((header, "rhoCSlopeSqrtLogNRsq",
-                    _fmt(float(r["rho_c_r2"]), 2)))
-        out.append((header, "meanCorrSlopeSqrtLogN",
-                    _fmt(float(r["mean_corr_slope"]), 3)))
-    if not per_q.empty:
-        lo = float(per_q["mean_corr_drift_50_to_300"].min())
-        hi = float(per_q["mean_corr_drift_50_to_300"].max())
-        out.append((header, "meanCorrDriftFiftyToThreeHundredLo", _fmt(lo, 3)))
-        out.append((header, "meanCorrDriftFiftyToThreeHundredHi", _fmt(hi, 3)))
+                    _fmt(float(pooled.iloc[0]["rho_c_slope"]), 3)))
     return out
 
 
@@ -1085,7 +1153,7 @@ def _n_implied_gap_component(panel: str) -> float | None:
     Returns ``None`` when either input is missing.
     """
     slopes = _safe_read_csv(
-        DATA / "mean_corr_diagnostic" / "mean_corr_vs_N_slopes.csv")
+        DATA / "network_size_resampling" / "rho_c_vs_N_slopes.csv")
     q1 = _safe_read_csv(DATA / panel / "rolling_percolation_Q1.csv")
     q5 = _safe_read_csv(DATA / panel / "rolling_percolation_Q5.csv")
     if slopes is None or slopes.empty or q1 is None or q5 is None:
@@ -1493,7 +1561,7 @@ def _dgp_macros() -> list[tuple[str, str, str]]:
         # page lets a reader count, so N is emitted beside the gap it qualifies.
         gap = (eq9["rho_c_sim_mean"] - eq9["rho_c_degree_one_mean"]).abs()
         out.append(("DGP eq:toy_threshold/eq:toy_closed_form verification (si:eq9_verification)",
-                    "dgpEqEightMaxGap", _fmt(float(gap.max()), 3)))
+                    "dgpEqEightMaxGap", _fmt_bound(float(gap.max()), 3, "hi")))
         out.append(("DGP eq:toy_threshold/eq:toy_closed_form verification (si:eq9_verification)",
                     "nDgpEqEightCells", str(len(eq9))))
         # The smallest fall of tilde-rho_c between adjacent simulated delta of
@@ -1503,7 +1571,7 @@ def _dgp_macros() -> list[tuple[str, str, str]]:
         falls = [-g.sort_values("delta")["rho_c_degree_one_mean"].diff().dropna()
                  for _, g in eq9.groupby("W_type")]
         out.append(("DGP eq:toy_threshold/eq:toy_closed_form verification (si:eq9_verification)",
-                    "dgpDegOneMinFall", _fmt(float(pd.concat(falls).min()), 3)))
+                    "dgpDegOneMinFall", _fmt_bound(float(pd.concat(falls).min()), 3, "lo")))
         # eq:toy_closed_form Gaussian Mills-ratio specialization systematically overshoots
         # rho_c_sim. Min/max of the overshoot range pin the cross-(delta,
         # W_type) cell envelope quoted in paper.tex subsec:toy_model and
@@ -1515,17 +1583,6 @@ def _dgp_macros() -> list[tuple[str, str, str]]:
         out.append(("DGP eq:toy_threshold/eq:toy_closed_form verification (si:eq9_verification)",
                     "dgpEqNineOvershootHi",
                     _fmt(float(overshoot.max()), 3)))
-
-    # Empirical range of the per-quintile rise of rho_c from N=50 to N=300,
-    # cited in paper subsec:threshold_vs_mean as dgpNScalingDriftEmpiricalLo--Hi.
-    rho_c_vs_n = _safe_read_csv(DATA / "finite_size" / "rho_c_vs_N.csv")
-    if rho_c_vs_n is not None and not rho_c_vs_n.empty:
-        lo = float(rho_c_vs_n["rho_c_drift_50_to_300"].min())
-        hi = float(rho_c_vs_n["rho_c_drift_50_to_300"].max())
-        out.append(("Empirical rise of rho_c over the network size (subsec:threshold_vs_mean)",
-                    "dgpNScalingDriftEmpiricalLo", _fmt(lo, 3)))
-        out.append(("Empirical rise of rho_c over the network size (subsec:threshold_vs_mean)",
-                    "dgpNScalingDriftEmpiricalHi", _fmt(hi, 3)))
 
     # DGP simulation constants (si:dgp_validation introduction and table notes).
     # These pin every numeric value the SI prose quotes about the simulator
@@ -1705,8 +1762,9 @@ def build_macros() -> list[tuple[str, str, str]]:
         _bandwidth_macros,
         _weekly_macros,
         _kospi_resolution_macros,
+        _setting_step_macros,
         _mean_corr_macros,
-        _mean_corr_vs_N_macros,
+        _rho_c_vs_N_macros,
         _universe_macros,
         _susceptibility_macros,
         _robustness_gap_macros,

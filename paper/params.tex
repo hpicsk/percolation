@@ -28,6 +28,7 @@
 \newcommand{\paperPerQuintile}{300\xspace}
 \newcommand{\minValidFractionPct}{80\%\xspace}
 \newcommand{\minSectorSize}{20\xspace}
+\newcommand{\minSectorStocksPerQuintile}{4\xspace}
 \newcommand{\minSectorSizeLo}{15\xspace}
 \newcommand{\minSectorSizeHi}{25\xspace}
 \newcommand{\rollingMASteps}{6\xspace}
@@ -123,6 +124,7 @@
 \newcommand{\sdDrawTwQthreeQfour}{0.0022\xspace}
 \newcommand{\sdDrawTwQfourQfive}{0.0018\xspace}
 \newcommand{\sdDrawTwQoneQfive}{0.0017\xspace}
+\newcommand{\stepDrawSpreadRatioMin}{2.3\xspace}
 \newcommand{\nDrawsRhoCAtGridEdge}{35\xspace}
 \newcommand{\nDrawCellsHeadline}{25{,}700\xspace}
 
@@ -169,7 +171,6 @@
 \newcommand{\pBlockBootBwTwShortQoneQfive}{< 10^{-4}\xspace}
 \newcommand{\tHacBwTwLongQoneQfive}{11.6\xspace}
 \newcommand{\pBlockBootBwTwLongQoneQfive}{< 10^{-4}\xspace}
-\newcommand{\tHacBwMinSignificant}{2.0\xspace}
 
 % rho_c from weekly returns on long windows (subsec:checks, subsec:main_result, tab:weekly_rho_c)
 \newcommand{\detectPowerPct}{80\%\xspace}
@@ -324,24 +325,77 @@
 % KOSPI-only resolution of the interior steps (subsec:main_result)
 \newcommand{\kospiDetectMin}{0.013\xspace}
 
+% Steps under the estimation settings (subsec:researcher_choices, tab:setting_steps)
+\newcommand{\tHacWthirtyQoneQtwo}{10.2\xspace}
+\newcommand{\pBootWthirtyQoneQtwo}{< 10^{-4}\xspace}
+\newcommand{\tHacWthirtyQtwoQthree}{3.7\xspace}
+\newcommand{\pBootWthirtyQtwoQthree}{< 10^{-4}\xspace}
+\newcommand{\tHacWthirtyQthreeQfour}{0.4\xspace}
+\newcommand{\pBootWthirtyQthreeQfour}{0.45\xspace}
+\newcommand{\detectWthirtyQthreeQfour}{0.007\xspace}
+\newcommand{\tHacWthirtyQfourQfive}{0.8\xspace}
+\newcommand{\pBootWthirtyQfourQfive}{0.20\xspace}
+\newcommand{\tHacWthirtyQoneQfive}{6.2\xspace}
+\newcommand{\pBootWthirtyQoneQfive}{< 10^{-4}\xspace}
+\newcommand{\tHacWhundredtwentyQoneQtwo}{7.2\xspace}
+\newcommand{\pBootWhundredtwentyQoneQtwo}{< 10^{-4}\xspace}
+\newcommand{\tHacWhundredtwentyQtwoQthree}{3.8\xspace}
+\newcommand{\pBootWhundredtwentyQtwoQthree}{< 10^{-4}\xspace}
+\newcommand{\tHacWhundredtwentyQthreeQfour}{4.2\xspace}
+\newcommand{\pBootWhundredtwentyQthreeQfour}{< 10^{-4}\xspace}
+\newcommand{\tHacWhundredtwentyQfourQfive}{2.7\xspace}
+\newcommand{\pBootWhundredtwentyQfourQfive}{1.4 \times 10^{-3}\xspace}
+\newcommand{\tHacWhundredtwentyQoneQfive}{7.0\xspace}
+\newcommand{\pBootWhundredtwentyQoneQfive}{< 10^{-4}\xspace}
+\newcommand{\tHacWtwofiftyQoneQtwo}{6.9\xspace}
+\newcommand{\pBootWtwofiftyQoneQtwo}{< 10^{-4}\xspace}
+\newcommand{\tHacWtwofiftyQtwoQthree}{2.9\xspace}
+\newcommand{\pBootWtwofiftyQtwoQthree}{3.0 \times 10^{-4}\xspace}
+\newcommand{\tHacWtwofiftyQthreeQfour}{4.0\xspace}
+\newcommand{\pBootWtwofiftyQthreeQfour}{2.0 \times 10^{-4}\xspace}
+\newcommand{\tHacWtwofiftyQfourQfive}{2.6\xspace}
+\newcommand{\pBootWtwofiftyQfourQfive}{3.0 \times 10^{-4}\xspace}
+\newcommand{\tHacWtwofiftyQoneQfive}{4.8\xspace}
+\newcommand{\pBootWtwofiftyQoneQfive}{< 10^{-4}\xspace}
+\newcommand{\tHacObsReqLoQoneQtwo}{9.6\xspace}
+\newcommand{\pBootObsReqLoQoneQtwo}{< 10^{-4}\xspace}
+\newcommand{\tHacObsReqLoQtwoQthree}{3.0\xspace}
+\newcommand{\pBootObsReqLoQtwoQthree}{3.7 \times 10^{-3}\xspace}
+\newcommand{\tHacObsReqLoQthreeQfour}{3.1\xspace}
+\newcommand{\pBootObsReqLoQthreeQfour}{1.9 \times 10^{-3}\xspace}
+\newcommand{\tHacObsReqLoQfourQfive}{1.3\xspace}
+\newcommand{\pBootObsReqLoQfourQfive}{0.09\xspace}
+\newcommand{\tHacObsReqLoQoneQfive}{7.0\xspace}
+\newcommand{\pBootObsReqLoQoneQfive}{< 10^{-4}\xspace}
+\newcommand{\tHacObsReqHiQoneQtwo}{9.8\xspace}
+\newcommand{\pBootObsReqHiQoneQtwo}{< 10^{-4}\xspace}
+\newcommand{\tHacObsReqHiQtwoQthree}{3.3\xspace}
+\newcommand{\pBootObsReqHiQtwoQthree}{1.8 \times 10^{-3}\xspace}
+\newcommand{\tHacObsReqHiQthreeQfour}{2.8\xspace}
+\newcommand{\pBootObsReqHiQthreeQfour}{6.2 \times 10^{-3}\xspace}
+\newcommand{\tHacObsReqHiQfourQfive}{1.4\xspace}
+\newcommand{\pBootObsReqHiQfourQfive}{0.07\xspace}
+\newcommand{\tHacObsReqHiQoneQfive}{6.8\xspace}
+\newcommand{\pBootObsReqHiQoneQfive}{< 10^{-4}\xspace}
+\newcommand{\detectChiQthreeQfour}{0.008\xspace}
+\newcommand{\detectWithinSectorQthreeQfour}{0.0094\xspace}
+\newcommand{\rhoCStepHeadlineQthreeQfourFine}{0.0089\xspace}
+
 % rho_c / mean |rho| coupling (subsec:threshold_vs_mean)
 \newcommand{\meanCorrSpearman}{0.95\xspace}
 \newcommand{\rhoCResidGapPctOfRaw}{33\%\xspace}
 \newcommand{\rhoCResidGapPctOfRawDegLo}{27\%\xspace}
 \newcommand{\rhoCResidGapPctOfRawDegHi}{53\%\xspace}
+\newcommand{\tHacMeanCorrResidQoneQfive}{5.4\xspace}
 \newcommand{\meanAbsCorrQone}{0.182\xspace}
 \newcommand{\meanAbsCorrQtwo}{0.198\xspace}
 \newcommand{\meanAbsCorrQthree}{0.204\xspace}
 \newcommand{\meanAbsCorrQfour}{0.206\xspace}
 \newcommand{\meanAbsCorrQfive}{0.207\xspace}
-\newcommand{\meanCorrStepQfourQfive}{+0.0003\xspace}
+\newcommand{\tHacMeanCorrQoneQfive}{3.7\xspace}
 
-% rho_c vs mean |rho| network-size divergence (subsec:threshold_vs_mean)
+% rho_c over the network size (subsec:threshold_vs_mean)
 \newcommand{\rhoCSlopeSqrtLogN}{0.167\xspace}
-\newcommand{\rhoCSlopeSqrtLogNRsq}{0.99\xspace}
-\newcommand{\meanCorrSlopeSqrtLogN}{0.000\xspace}
-\newcommand{\meanCorrDriftFiftyToThreeHundredLo}{-0.001\xspace}
-\newcommand{\meanCorrDriftFiftyToThreeHundredHi}{0.001\xspace}
 
 % Korean universe (subsec:data_description)
 \newcommand{\nStocksKoreaTotal}{3{,}293\xspace}
@@ -630,15 +684,11 @@
 \newcommand{\rhoCDgpSimSectorDeltaE}{0.490\xspace}
 \newcommand{\rhoCDgpSimSectorDegOneDeltaE}{0.483\xspace}
 \newcommand{\rhoCDgpClosedSectorDeltaE}{0.526\xspace}
-\newcommand{\dgpEqEightMaxGap}{0.009\xspace}
+\newcommand{\dgpEqEightMaxGap}{0.010\xspace}
 \newcommand{\nDgpEqEightCells}{10\xspace}
-\newcommand{\dgpDegOneMinFall}{0.038\xspace}
+\newcommand{\dgpDegOneMinFall}{0.037\xspace}
 \newcommand{\dgpEqNineOvershootLo}{0.035\xspace}
 \newcommand{\dgpEqNineOvershootHi}{0.186\xspace}
-
-% Empirical rise of rho_c over the network size (subsec:threshold_vs_mean)
-\newcommand{\dgpNScalingDriftEmpiricalLo}{0.093\xspace}
-\newcommand{\dgpNScalingDriftEmpiricalHi}{0.106\xspace}
 
 % DGP simulation constants (si:dgp_validation)
 \newcommand{\dgpSigmaF}{0.007\xspace}

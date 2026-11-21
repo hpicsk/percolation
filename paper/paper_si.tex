@@ -32,6 +32,28 @@
 \usepackage{xr-hyper}
 \externaldocument{paper}
 
+% The class abbreviates each author's given names for the ORCID footnote and
+% gives "Jong-Kook" one initial; the short names below are the ones that the
+% email footnote and the running head print.
+\makeatletter
+\@namedef{orcidname@0009-0004-0037-7593}{S. Kang}
+\@namedef{orcidname@0000-0003-1828-7807}{J.-K. Kim}
+\makeatother
+\ExplSyntaxOn
+\RenewDocumentCommand \orcidauthor { m m }
+  {
+    \cs_if_exist:cF { orcidname@#1 }
+      { \PackageError { paper } { No~short~name~for~ORCID~#1 } { } }
+    \seq_gput_right:Nn \g_stm_orcid_seq
+      { { \ttfamily \tl_to_str:n { #1 } } \space ( \use:c { orcidname@#1 } ) }
+  }
+\ExplSyntaxOff
+
+% \eadname sets the author name that the email footnote prints.
+\makeatletter
+\def\eadname#1{\@eadauthor={#1}}
+\makeatother
+
 % ----- Parameters -----
 \input{params.tex}
 
@@ -56,7 +78,7 @@
 
 \author[2]{Jong-Kook Kim}[orcid=0000-0003-1828-7807]
 \cormark[1]
-\makeatletter\@eadauthor={J.-K. Kim}\makeatother % hyphenated initials in the email footnote
+\eadname{J.-K. Kim} % hyphenated initials in the email footnote
 \ead{jongkook@korea.ac.kr}
 
 \affiliation[1]{organization={Department of Electrical and Computer Engineering, Korea University},
@@ -70,7 +92,7 @@
 \cortext[1]{Corresponding author}
 
 \begin{abstract}
-This supplement states how the Korean and Taiwanese panels are built and which settings the estimation uses. The supplement also gives the design and results of each check against an alternative explanation, the comparison of the percolation threshold with the mean correlation, and a simulation of the return-generating model of the main paper.
+This supplement states how the Korean and Taiwanese panels are built and which settings the estimation uses. The supplement also gives the design and results of each check against an alternative explanation, the tests of the endpoint contrast in each subperiod, the comparison of the percolation threshold with the mean correlation, and a simulation of the return-generating model of the main paper.
 \end{abstract}
 
 \begin{keywords}
@@ -91,11 +113,11 @@ Correlation networks \sep Percolation threshold \sep Random matrix theory \sep F
 % ============================================================
 \section{Panels and Settings}\label{si:settings}
 
-Table~\ref{tab:settings} collects the sizes of the panels, their shares of trading days on which a stock did not trade, and the settings that the main paper fixes rather than measures. The rest of this section states the steps that identify the common stocks of each panel.
+Table~\ref{tab:settings} collects the sizes of the panels, their shares of trading days on which a stock did not trade, and the settings that the main paper fixes rather than measures. The rest of this section states the steps that identify the common stocks of each panel and how the Taiwanese market capitalizations are formed.
 
 The Korean universe, the set of stocks that the Korean panel can hold, is read from the daily \texttt{marcap} snapshots~\citep{marcap2024}, which list every security code that the Korea Exchange quoted on each trading day, including the codes of stocks that later delisted. The universe excludes preferred shares, special-purpose acquisition companies (SPACs), real-estate investment trusts (REITs), funds, exchange-traded funds (ETFs), and the listings of the Korea New Exchange (KONEX). The security type of each code is read on each trading day, so a code enters the universe only on the trading days on which it trades as a common stock. The universe admits only the trading days that FnGuide prices, because the returns come from FnGuide's adjusted closes. FnGuide prices no REIT, fund, or ETF, so this rule also removes them. A preferred share is identified by its code, a SPAC by its listed name, and a KONEX listing by its market. The Korea Exchange reissues a delisted company's code to a new listing, so returns are computed within each company's listing and never span a change of company.
 
-The Taiwanese universe holds the stocks of the Taiwan Stock Exchange (TWSE) and the Taipei Exchange (TPEx) whose codes in FinMind's listing registry have four digits, a rule that removes preferred shares and warrants. The universe also excludes every listed security that is not a common stock (an ETF, for example). It excludes the stocks of the TWSE Innovation Board, a separate tier of the TWSE, as the Korean universe excludes KONEX, a separate market. FinMind's price series also include the trading days on which a stock traded on the TPEx emerging board, a market for unlisted stocks, before its listing or between two listings. FinMind's share-count series carries a stock only while the stock is listed, except that it usually starts to carry a stock on the last trading day before the listing. The panel therefore admits a Taiwanese trading day only if FinMind carries the stock's share count on that day. Where the stock printed a price on an earlier day, FinMind must also carry the share count on the last such day, so no return of the panel runs from a price set on the emerging board. A Taiwanese stock's market capitalization is its last traded close times its number of shares issued.
+The Taiwanese universe holds the stocks of the Taiwan Stock Exchange (TWSE) and the Taipei Exchange (TPEx) whose codes in FinMind's listing registry have four digits, a rule that removes preferred shares and warrants. The universe also excludes every listed security that is not a common stock (an ETF, for example). It excludes the stocks of the TWSE Innovation Board, a separate tier of the TWSE, just as the Korean universe excludes KONEX, a separate market. FinMind's price series also include the trading days on which a stock traded on the TPEx emerging board, a market for unlisted stocks, before its listing or between two listings. FinMind's share-count series carries a stock only while the stock is listed, except that it usually starts to carry a stock on the last trading day before the listing. The panel therefore admits a Taiwanese trading day only if FinMind carries the stock's share count on that day. If the stock has a price on an earlier day, FinMind must also carry the share count on the latest earlier day with a price. For the last trading day before a listing, that earlier day is a day on the emerging board whenever the stock traded on the emerging board, so the requirement drops the last trading day before the listing. No return of the panel therefore runs from a price set on the emerging board, because no return spans a dropped day. The share-count series also gives each Taiwanese stock's market capitalization, its last traded close times its number of shares issued.
 
 Neither panel holds a delisting return, the return from the last traded price to the value that holders receive at delisting, so the correlations of a delisted stock use its returns up to its last traded day.
 
@@ -130,6 +152,8 @@ Block bootstrap: block length (windows), resamples & \multicolumn{2}{l}{\blockBo
 Longer bandwidths and blocks (windows) & \multicolumn{2}{l}{\bwShort\ and \bwLong} \\
 \midrule
 \textit{Checks} & & \\
+Other window lengths $T$ (trading days) & \windowDaysWthirty, \windowDaysWhundredtwenty, and \windowDaysWtwofifty & --- \\
+Other observation requirements          & \minValidFractionLoPct\ and \minValidFractionHiPct & --- \\
 KRX sector-size floor (stocks)          & \minSectorSize & --- \\
 Shuffled-returns null seeds, one on each draw & \nShuffleSeeds & --- \\
 Marchenko--Pastur band at $N = \paperPerQuintile$ and $T = \paperWindowDays$ & $[\mpLambdaMinus,\,\mpLambdaPlus]$ & --- \\
@@ -144,7 +168,7 @@ Windows used                            & one in every \networkSizeWindowStride 
 \end{tabular}
 \begin{tablenotes}
 \footnotesize
-\item \textit{Notes:} A value that spans both columns applies to both panels, and --- marks a setting that the Taiwanese panel does not use. The share of trading days on which a stock did not trade is taken over every stock and every trading day on which the stock is listed, before the observation requirement. On each such day, the stock's close is missing. For $n$ windows, the Newey--West bandwidth is $\lfloor 4(n/100)^{2/9} \rfloor$. The bootstrap block is the integer nearest $n^{1/3}$ windows and never shorter than the span of consecutive windows that share returns. The bootstrap resamples the differences in blocks of contiguous windows. $\rho_c$ lies at the upper edge of the cutoff grid in \nDrawsRhoCAtGridEdge\ of the \nDrawCellsHeadline\ Korean draws, one for each seed, window, and quintile. Those draws stay in the means, although the edge bounds their $\rho_c$ rather than measuring it. The weekly-threshold bandwidth is one more than the largest lag at which two windows share returns.
+\item \textit{Notes:} A value that spans both columns applies to both panels, and --- marks a setting that the Taiwanese panel does not use. The share of trading days on which a stock did not trade is taken over every stock and every trading day on which the stock is listed, before the observation requirement. For $n$ windows, the Newey--West bandwidth is $\lfloor 4(n/100)^{2/9} \rfloor$. The bootstrap block is the integer nearest $n^{1/3}$ windows and never shorter than the span of consecutive windows that share returns. The bootstrap resamples the differences in blocks of contiguous windows. $\rho_c$ lies at the upper edge of the cutoff grid in \nDrawsRhoCAtGridEdge\ of the \nDrawCellsHeadline\ Korean draws, one for each seed, window, and quintile. Those draws stay in the means, although the edge bounds their $\rho_c$ rather than measuring it. The weekly-threshold bandwidth is one more than the largest lag at which two windows share returns.
 \end{tablenotes}
 \end{threeparttable}
 \end{table}
@@ -156,7 +180,7 @@ Windows used                            & one in every \networkSizeWindowStride 
 
 \subsection{Overview}
 
-Table~\ref{tab:robustness_summary} gives the cross-window mean of $\rho_c$ in each quintile under every check of the main paper except the weekly-threshold check.
+Table~\ref{tab:robustness_summary} gives the Korean cross-window mean of $\rho_c$ in each quintile under every check of the main paper except the weekly-threshold check.
 
 \begin{table}[pos=htbp]
 \centering
@@ -199,7 +223,7 @@ Susceptibility peak $\rho_c^{\chi}$ & $\barRhoCChiQone$ & $\barRhoCChiQtwo$ & $\
 
 \subsection{Noise}\label{subsec:null_robustness}
 
-The mean excess kurtosis of daily returns falls at every step across the quintiles, from \excessKurtQone\ in Q1 to \excessKurtQfive\ in Q5, so the returns of the smaller stocks have heavier tails, which widen the sampling distribution of the correlations of independent series and so reverse the endpoint contrast of the shuffled-returns null.
+Averaged over the stocks of each window's quintile and then over the windows, the excess kurtosis of the Korean daily returns falls at every step across the quintiles, from \excessKurtQone\ in Q1 to \excessKurtQfive\ in Q5, so the returns of the smaller stocks have heavier tails, which can raise the upper quantile of the sampling distribution of the correlations of independent series and so reverse the endpoint contrast of the shuffled-returns null.
 
 \subsection{Stale Prices}\label{subsec:trading_arrangements}
 
@@ -256,7 +280,7 @@ Q1--Q5 & $\wkTwLongDailyStepQoneQfive$ & $\wkTwLongDailyTQoneQfive$ & $\wkTwLong
 
 \subsection{Variables That Move with Size}\label{subsec:size_confounds}
 
-The KOSPI-only panel's Q1--Q2 and Q4--Q5 steps are significant, whereas its Q2--Q3 and Q3--Q4 steps are not (Table~\ref{tab:size_confound_tests}). A one-sided $5\%$ test at the network size of the KOSPI-only panel detects either of these two steps with \detectPowerPct\ power only if the step is at least \kospiDetectMin, which exceeds the main estimate's Q2--Q3 and Q3--Q4 steps of \rhoCStepHeadlineQtwoQthree\ and \rhoCStepHeadlineQthreeQfour. Of the within-sector steps, the Q1--Q2, Q2--Q3, and Q4--Q5 steps are significant, whereas the Q3--Q4 step is not. The within-sector check drops the sectors with fewer than \minSectorSize\ stocks, so that every quintile holds stocks of each sector that it keeps. The five within-sector means stay ordered at sector-size floors of \minSectorSizeLo\ and \minSectorSizeHi\ stocks. The endpoint contrast stays between \rhoCGapWithinSectorFloorMin\ and \rhoCGapWithinSectorFloorMax\ at these two floors and at the check's own floor.
+The KOSPI-only panel's Q1--Q2 and Q4--Q5 steps are significant, whereas its Q2--Q3 and Q3--Q4 steps are not (Table~\ref{tab:size_confound_tests}). The KOSPI-only test detects either of these two steps with \detectPowerPct\ power only if the step is at least \kospiDetectMin, which exceeds the main estimate's Q2--Q3 and Q3--Q4 steps of \rhoCStepHeadlineQtwoQthree\ and \rhoCStepHeadlineQthreeQfour. Of the within-sector steps, the Q1--Q2, Q2--Q3, and Q4--Q5 steps are significant, whereas the Q3--Q4 step is not. The within-sector test detects the Q3--Q4 step with \detectPowerPct\ power only if the step is at least \detectWithinSectorQthreeQfour, which exceeds the Q3--Q4 step of the main estimate, \rhoCStepHeadlineQthreeQfourFine. At sector-size floors of \minSectorSizeLo\ and \minSectorSizeHi\ stocks in place of \minSectorSize, the five within-sector means also stay ordered. The endpoint contrast stays between \rhoCGapWithinSectorFloorMin\ and \rhoCGapWithinSectorFloorMax\ at these two floors and at the check's own floor.
 
 \begin{table}[pos=htbp]
 \centering
@@ -279,9 +303,45 @@ Q4--Q5 & $\tHacKospiQfourQfive$ & $p \pBlockBootKospiQfourQfive$ & $\tHacWithinS
 
 \subsection{Estimation Settings}\label{subsec:researcher_choices}
 
-Table~\ref{tab:step_robustness} gives the spread of each step across the draws and the tests at longer bandwidths, at which no significant step has a HAC $t$-statistic below \tHacBwMinSignificant. The estimation settings change the level of $\bar\rho_c$ but not the sign of the endpoint contrast (Table~\ref{tab:robustness_summary}). The level of $\bar\rho_c$ falls as the window lengthens, because longer windows narrow the sampling distribution of the correlations.
+Table~\ref{tab:step_robustness} gives the spread of each step across the draws and the tests of each step at longer bandwidths. Every significant step is at least \stepDrawSpreadRatioMin\ times its spread across the draws, so the random draws of stocks alone do not produce it.
 
-The susceptibility-peak threshold $\rho_c^{\chi}$ lies \rhoCChiOffsetMin\ to \rhoCChiOffsetMax\ above $\rho_c$, more in the two smallest quintiles than in the two largest, which flattens its rise relative to that of $\rho_c$. Its Q3--Q4 and Q4--Q5 steps are not significant, at HAC $t = \tHacChiQthreeQfour$ and $t = \tHacChiQfourQfive$.
+The estimation settings change the level of $\bar\rho_c$ but not the sign of the endpoint contrast (Table~\ref{tab:robustness_summary}). The level of $\bar\rho_c$ falls as the window lengthens, because longer windows narrow the sampling distribution of the correlations.
+
+Table~\ref{tab:setting_steps} gives the tests of each step and of the endpoint contrast at each window length and observation requirement other than those of the main estimate. On the windows of \windowDaysWthirty\ days, the test detects the Q3--Q4 step with \detectPowerPct\ power if the step is at least \detectWthirtyQthreeQfour, which lies below the Q3--Q4 step of the main estimate, \rhoCStepHeadlineQthreeQfour.
+
+\begin{table}[pos=htbp]
+\centering
+\begin{threeparttable}
+\caption{One-sided tests of each step of $\bar\rho_c$ and of the endpoint contrast at each window length $T$ and observation requirement other than those of the main estimate, Korea.}\label{tab:setting_steps}
+\footnotesize
+\begin{tabular}{ll ccccc}
+\toprule
+Setting & Statistic & Q1--Q2 & Q2--Q3 & Q3--Q4 & Q4--Q5 & Q1--Q5 \\
+\midrule
+$T = \windowDaysWthirty$ & HAC $t$ & $\tHacWthirtyQoneQtwo$ & $\tHacWthirtyQtwoQthree$ & $\tHacWthirtyQthreeQfour$ & $\tHacWthirtyQfourQfive$ & $\tHacWthirtyQoneQfive$ \\
+ & Block bootstrap $p$ & $\pBootWthirtyQoneQtwo$ & $\pBootWthirtyQtwoQthree$ & $\pBootWthirtyQthreeQfour$ & $\pBootWthirtyQfourQfive$ & $\pBootWthirtyQoneQfive$ \\
+\addlinespace
+$T = \windowDaysWhundredtwenty$ & HAC $t$ & $\tHacWhundredtwentyQoneQtwo$ & $\tHacWhundredtwentyQtwoQthree$ & $\tHacWhundredtwentyQthreeQfour$ & $\tHacWhundredtwentyQfourQfive$ & $\tHacWhundredtwentyQoneQfive$ \\
+ & Block bootstrap $p$ & $\pBootWhundredtwentyQoneQtwo$ & $\pBootWhundredtwentyQtwoQthree$ & $\pBootWhundredtwentyQthreeQfour$ & $\pBootWhundredtwentyQfourQfive$ & $\pBootWhundredtwentyQoneQfive$ \\
+\addlinespace
+$T = \windowDaysWtwofifty$ & HAC $t$ & $\tHacWtwofiftyQoneQtwo$ & $\tHacWtwofiftyQtwoQthree$ & $\tHacWtwofiftyQthreeQfour$ & $\tHacWtwofiftyQfourQfive$ & $\tHacWtwofiftyQoneQfive$ \\
+ & Block bootstrap $p$ & $\pBootWtwofiftyQoneQtwo$ & $\pBootWtwofiftyQtwoQthree$ & $\pBootWtwofiftyQthreeQfour$ & $\pBootWtwofiftyQfourQfive$ & $\pBootWtwofiftyQoneQfive$ \\
+\addlinespace
+Requirement \minValidFractionLoPct & HAC $t$ & $\tHacObsReqLoQoneQtwo$ & $\tHacObsReqLoQtwoQthree$ & $\tHacObsReqLoQthreeQfour$ & $\tHacObsReqLoQfourQfive$ & $\tHacObsReqLoQoneQfive$ \\
+ & Block bootstrap $p$ & $\pBootObsReqLoQoneQtwo$ & $\pBootObsReqLoQtwoQthree$ & $\pBootObsReqLoQthreeQfour$ & $\pBootObsReqLoQfourQfive$ & $\pBootObsReqLoQoneQfive$ \\
+\addlinespace
+Requirement \minValidFractionHiPct & HAC $t$ & $\tHacObsReqHiQoneQtwo$ & $\tHacObsReqHiQtwoQthree$ & $\tHacObsReqHiQthreeQfour$ & $\tHacObsReqHiQfourQfive$ & $\tHacObsReqHiQoneQfive$ \\
+ & Block bootstrap $p$ & $\pBootObsReqHiQoneQtwo$ & $\pBootObsReqHiQtwoQthree$ & $\pBootObsReqHiQthreeQfour$ & $\pBootObsReqHiQfourQfive$ & $\pBootObsReqHiQoneQfive$ \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}
+\footnotesize
+\item \textit{Notes:} Each test is that of main-paper Sec.~\ref{subsec:inference}, with the bandwidth and the block length raised as main-paper Sec.~\ref{subsec:checks} states. The rows of the observation requirement use windows of $T = \paperWindowDays$ days. Main-paper Table~\ref{tab:pair_significance} gives the tests of the main estimate. Q1--Q5 is the endpoint contrast.
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
+
+The Korean susceptibility-peak threshold $\rho_c^{\chi}$ lies \rhoCChiOffsetMin\ to \rhoCChiOffsetMax\ above $\rho_c$, more in the two smallest quintiles than in the two largest, which flattens its rise relative to that of $\rho_c$. The Q3--Q4 and Q4--Q5 steps of $\rho_c^{\chi}$ are not significant, at HAC $t = \tHacChiQthreeQfour$ and $t = \tHacChiQfourQfive$. The test of $\rho_c^{\chi}$ detects the Q3--Q4 step with \detectPowerPct\ power if the step is at least \detectChiQthreeQfour, which lies below the Q3--Q4 step of the main estimate.
 
 \begin{table}[pos=htbp]
 \centering
@@ -311,7 +371,7 @@ Q1--Q5 & $\sdDrawTwQoneQfive$ & $\tHacBwTwShortQoneQfive$ & $\pBlockBootBwTwShor
 \end{tabular}
 \begin{tablenotes}
 \footnotesize
-\item \textit{Notes:} The SD across the draws is the standard deviation, over the \nDrawSeeds\ draws, of the step's cross-window mean computed from each draw alone. Each test is that of main-paper Sec.~\ref{subsec:inference} on the per-window means over the draws. The Newey--West bandwidth and the bootstrap block are both set to the stated number of windows. Main-paper Tables~\ref{tab:pair_significance} and~\ref{tab:taiwan_rerun} give the tests at the automatic bandwidth. Q1--Q5 is the endpoint contrast.
+\item \textit{Notes:} The SD across the draws is the standard deviation, over the \nDrawSeeds\ draws, of the step's cross-window mean computed from each draw alone. Each test is that of main-paper Sec.~\ref{subsec:inference} on the per-window means over the draws. The Newey--West bandwidth and the bootstrap block are both set to the stated number of windows. Main-paper Tables~\ref{tab:pair_significance} and~\ref{tab:taiwan_rerun} give the tests at the bandwidth $\lfloor 4(n/100)^{2/9} \rfloor$ of main-paper Sec.~\ref{subsec:inference}. Q1--Q5 is the endpoint contrast.
 \end{tablenotes}
 \end{threeparttable}
 \end{table}
@@ -319,6 +379,31 @@ Q1--Q5 & $\sdDrawTwQoneQfive$ & $\tHacBwTwShortQoneQfive$ & $\pBlockBootBwTwShor
 % ============================================================
 % S.3 THRESHOLD VERSUS MEAN CORRELATION
 % ============================================================
+\section{Subperiods}\label{si:subperiods}
+
+Table~\ref{tab:subperiod} gives the one-sided Newey--West HAC $t$-statistic of the endpoint contrast over all windows, over each half of the windows, and over each five-year period of main-paper Sec.~\ref{subsec:time_method}.
+
+\begin{table}[pos=htbp]
+\centering
+\begin{threeparttable}
+\caption{One-sided Newey--West HAC $t$-statistic of the endpoint contrast in each subperiod, Korea and Taiwan.}\label{tab:subperiod}
+\begin{tabular}{lcc}
+\toprule
+Windows & Korea & Taiwan \\
+\midrule
+All & \tHacQoneQfive & \tHacTwQoneQfive \\
+First half  & \tHacEndpointEarly & \tHacEndpointEarlyTw \\
+Second half & \tHacEndpointLate  & \tHacEndpointLateTw \\
+\addlinespace
+\yearBlockA & \tHacYearBlockKrA & \tHacYearBlockTwA \\
+\yearBlockB & \tHacYearBlockKrB & \tHacYearBlockTwB \\
+\yearBlockC & \tHacYearBlockKrC & \tHacYearBlockTwC \\
+\yearBlockD & \tHacYearBlockKrD & \tHacYearBlockTwD \\
+\bottomrule
+\end{tabular}
+\end{threeparttable}
+\end{table}
+
 \section{Percolation Threshold Versus Mean Correlation}\label{si:rho_c_vs_mean}
 
 Fig.~\ref{fig:si_rho_c_vs_mean} shows the cubic regression of main-paper Sec.~\ref{subsec:threshold_vs_mean} and its residuals.
@@ -338,14 +423,14 @@ Each variance of main-paper Eq.~\eqref{eq:toy_var} has the derivative $2\sigma_u
 
 \section{Simulation of the Return-Generating Model}\label{si:dgp_validation}
 
-The simulation draws returns from main-paper Eq.~\eqref{eq:toy_rgp} and passes them to the estimation of the main paper, which gives the simulated threshold $\rho_c^{\mathrm{sim}}$. It uses $T = \dgpT$ trading days, $N = \dgpN$ stocks per segment, the idiosyncratic standard deviation $\sigma_u = \dgpSigmaU$, and the values of $\delta$ from $\dgpDeltaGridMin$ to $\dgpDeltaGridMax$ that Table~\ref{tab:dgp_eq9} lists. It uses two peer-coupling matrices, each scaled to unit row sums. The first links each stock to $k = \dgpKnnK$ others at random, and the second groups the stocks into \dgpNSectors\ sectors with weight \dgpIntraWeight\ within a sector and \dgpInterWeight\ between sectors. The loadings are drawn with fixed seeds from a normal distribution with mean \dgpBetaMean\ and standard deviation \dgpBetaStd, clipped to $[\dgpBetaLo, \dgpBetaHi]$ so that all loadings share a sign. The factor standard deviation $\sigma_f = \dgpSigmaF$ is \dgpSigmaFScale\ times \dgpSigmaFUnscaled, a round value for the daily standard deviation of a market index's return. The multiplier is set from data so that the simulated $\rho_c$ over the grid of $\delta$ brackets the range of the Korean cross-window means, from \barRhoCQone\ to \barRhoCQfive, whereas the sign prediction of the main paper for $\delta \geq 1/2$ is analytic and uses no parameter set from data.
+The simulation draws returns from main-paper Eq.~\eqref{eq:toy_rgp} and passes them to the estimation of the main paper, which gives the simulated threshold $\rho_c^{\mathrm{sim}}$. The simulation uses $T = \dgpT$ trading days, $N = \dgpN$ stocks at each value of $\delta$, the idiosyncratic standard deviation $\sigma_u = \dgpSigmaU$, and the values of $\delta$ from $\dgpDeltaGridMin$ to $\dgpDeltaGridMax$ that Table~\ref{tab:dgp_eq9} lists. The simulation uses two peer-coupling matrices, each scaled to unit row sums, so that the fall of the thresholds with $\delta$ is tested under two structures of propagation. The first, a random matrix, links each stock to \dgpKnnK\ others at random. The second, a sector matrix, groups the stocks into \dgpNSectors\ sectors with weight \dgpIntraWeight\ within a sector and \dgpInterWeight\ between sectors. The loadings are drawn with fixed seeds from a normal distribution with mean \dgpBetaMean\ and standard deviation \dgpBetaStd, clipped to $[\dgpBetaLo, \dgpBetaHi]$ so that all loadings share a sign. The factor standard deviation $\sigma_f = \dgpSigmaF$ is \dgpSigmaFScale\ times \dgpSigmaFUnscaled, a round value for the daily standard deviation of a market index's return. The multiplier is set from data so that the simulated $\rho_c$ over the grid of $\delta$ brackets the range of the Korean cross-window means, from \barRhoCQone\ to \barRhoCQfive, whereas the sign prediction of the main paper for $1/2 \leq \delta < 1$ is analytic and uses no parameter set from data.
 
 \label{si:eq9_verification}Table~\ref{tab:dgp_eq9} gives the simulated threshold $\rho_c^{\mathrm{sim}}$, the model's threshold $\tilde\rho_c$ of main-paper Eq.~\eqref{eq:toy_threshold}, and the closed form in each of the \nDgpEqEightCells\ cells of $\delta$ and peer-coupling matrix. The closed form of main-paper Eq.~\eqref{eq:toy_closed_form} orders the values of $\delta$ as $\rho_c^{\mathrm{sim}}$ does but lies above $\rho_c^{\mathrm{sim}}$ by \dgpEqNineOvershootLo\ to \dgpEqNineOvershootHi, because it keeps only the leading-order root of main-paper Eq.~\eqref{eq:toy_gauss}, which lies above the exact normal quantile, and because the upper tail of the simulated correlations is not normal. The closed form therefore predicts the direction of the dependence on $\delta$ but not the level of $\rho_c$.
 
 \begin{table}[pos=htbp]
 \centering
 \begin{threeparttable}
-\caption{Simulated threshold, random-graph criterion, and closed form, by $\delta$ and peer-coupling matrix.}\label{tab:dgp_eq9}
+\caption{Simulated threshold, the model's threshold $\tilde\rho_c$, and closed form, by $\delta$ and peer-coupling matrix.}\label{tab:dgp_eq9}
 \begin{tabular}{ccccc}
 \toprule
 $\delta$ & Matrix & $\rho_c^{\mathrm{sim}}$ & $\tilde\rho_c$ & Closed form \\

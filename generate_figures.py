@@ -181,7 +181,7 @@ def fig_rho_c_vs_mean():
     axL.plot(xs, ys, color=GRAY1, linewidth=1.8, label="pooled cubic fit")
     axL.text(0.04, 0.95, rf"Spearman $\rho={spearman:.2f}$",
              transform=axL.transAxes, va="top", fontsize=10)
-    axL.set_xlabel(r"Segment mean off-diagonal $|\rho_{ij}|$")
+    axL.set_xlabel(r"Mean $|\rho_{ij}|$ of the (window, quintile) cell")
     axL.set_ylabel(r"Percolation threshold $\rho_c$")
     axL.legend(loc="lower right", framealpha=0.9, fontsize=8.5, ncol=2)
 

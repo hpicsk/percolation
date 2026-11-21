@@ -5,6 +5,42 @@ against the regenerated CSV/Parquet outputs under data/. Error messages
 quote the manuscript sentence being violated. Absolute tolerance is 0.005 for rho_c-level values
 (three-decimal paper rounding) unless a tighter tolerance is justified.
 
+Steps of the arguments of subsec:toy_model, subsec:network_size and
+si:variance_derivative that no computation decides, each with its reason. The
+tests at the end of this file decide the other steps.
+
+- subsec:toy_model and si:variance_derivative: "sum_k W_ik^2 <= 1", the
+  non-negativity of the factors (W_ij + W_ji) sigma_u^2 and
+  sum_k W_ik W_jk sigma_u^2 that multiply the coefficients of delta, "delta >=
+  1-delta >= (1-delta) sum_k W_ik^2", "If all loadings beta_i share a sign,
+  every covariance is non-negative", the rise with delta of each divided
+  variance as a sum of the two rising functions with the coefficients
+  beta_i^2 sigma_f^2 and sigma_u^2, and the fall with delta of the absolute
+  correlation of every pair on [1/2, 1). Each is an inequality at every point of
+  a set of two or more real variables. Only a decision procedure for polynomial
+  inequalities, such as quantifier elimination, decides it, and the paper
+  proves it by hand, not with such a procedure.
+- subsec:toy_model: "F_delta_1 then first-order stochastically dominates
+  F_delta_2", "first-order stochastic dominance on [1/2,1) gives
+  tilde-rho_c(delta_2) <= tilde-rho_c(delta_1)", and its strictness where the
+  pairs near the quantile are coupled only through shared peers. Each ranges
+  over every distribution of the pair correlations, which no finite
+  computation enumerates.
+- subsec:toy_model: "Below delta = 1/2, the sign of the response of
+  tilde-rho_c to delta depends on W". eq:toy_threshold has a root only where
+  F_delta is continuous, whereas F_delta over the pairs of a finite W is a step
+  function, so a pair of example matrices would decide the claim only under a
+  convention for the quantile that the paper does not state.
+- subsec:toy_model: "Because delta falls with firm size ... the model predicts
+  that tilde-rho_c rises with firm size". The premise is the empirical claim of
+  subsec:dissipation_framework, which the cited studies support and no
+  computation of this repository measures.
+- subsec:network_size: "The leading-order solution of phi(z)/z = 1/(N-1) is
+  then z approx sqrt(2 ln(N-1))", the Mills-ratio asymptote, and the growth of
+  the largest sample correlation as sqrt(4 ln N / T). Each is a limit as N
+  grows, which no computation at finitely many N decides; the second is the
+  cited theorem of jiang2004largest.
+
 Run: pytest test_assertions.py -q
 """
 
@@ -17,6 +53,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import sympy as sp
+from scipy.stats import norm
 
 from fn_percolation.constants import RHO_RANGE, STEP, WINDOW
 from fn_percolation.dgp import DEFAULT_SIGMA_F_SCALE
@@ -190,8 +228,7 @@ def test_tab1_per_pair_fraction_holds():
 
 def test_tab1_hac_endpoint_significance():
     """tab:pair_significance prints the endpoint HAC t = 6.8 and bootstrap
-    p < 10^-4, and subsec:taiwan compares the Taiwanese t 'compared with 6.8
-    in Korea'. The per-pair HAC t-statistics and
+    p < 10^-4. The per-pair HAC t-statistics and
     bootstrap p-values that the body cites are checked in
     test_tab1_primary_inference_per_pair against the persisted
     pair_significance.csv."""
@@ -208,17 +245,15 @@ def test_tab1_hac_endpoint_significance():
 
 
 def test_ordering_through_q4_holds_step_by_step_and_through_q5_does_not():
-    """subsec:main_result: "Tests robust to the overlap of the windows find the
-    three steps through Q4 and the endpoint contrast significant and the Q4--Q5
-    step not ... The ordering Q1 < Q2 < Q3 < Q4 is therefore significant at the
+    """subsec:main_result: "The three steps through Q4 and the endpoint contrast
+    are significant, whereas the Q4--Q5 step is not ... The ordering Q1 < Q2 < Q3 < Q4 is therefore significant at the
     5% level, whereas the ordering through Q5 is not." The abstract: "In both
-    markets, the threshold averaged over windows rises significantly, in tests
-    that allow for overlapping windows, at each step from the smallest to the
-    fourth quintile but not from the fourth to the largest." sec:introduction:
-    "Tests that allow for overlapping windows find each of these steps
-    significant at the 5% level, whereas the step to the largest quintile is
-    significant in neither market". The highlights: "The rise is significant
-    to the fourth size quintile in both Korea and Taiwan", whose Taiwanese half
+    markets, the cross-window mean threshold rises significantly at each step
+    from the smallest to the fourth quintile but not to the largest."
+    sec:introduction: "Tests that allow for the overlap of the windows find each step through the fourth quintile significant at the 5%
+    level, whereas the step to the largest quintile is significant in neither
+    market." The highlights: "In Korea and Taiwan, thresholds rise
+    significantly quintile by quintile to the fourth", whose Taiwanese half
     test_taiwan_every_step_through_q4_significant_and_not_q4_to_q5 covers.
 
     subsec:inference reads an ordering as an intersection of one-sided step
@@ -312,9 +347,10 @@ def test_taiwan_every_step_through_q4_significant_and_not_q4_to_q5():
     )
 
 
-def test_taiwan_hac_endpoint_stronger_than_korea():
-    """subsec:taiwan: 'The Taiwanese endpoint contrast is 0.112, with a HAC
-    t-statistic of 15.6, compared with 6.8 in Korea.'"""
+def test_taiwan_hac_endpoint_significant():
+    """subsec:taiwan: 'The Taiwanese endpoint contrast of 0.112 is significant
+    (HAC t = 15.6).' Significant is read as in subsec:inference, on both the
+    HAC t and the bootstrap."""
     sig = pd.read_csv(DATA / "taiwan" / "pair_significance.csv")
     row = sig[(sig["pair"] == "Q5-Q1")
               & (sig["observable"] == "rho_c")].iloc[0]
@@ -327,19 +363,13 @@ def test_taiwan_hac_endpoint_stronger_than_korea():
         f"in every resample, p < 1e-4 (tab:taiwan_rerun), but data shows "
         f"p={float(row['block_boot_p_one_sided']):.2e}"
     )
-    kr = hac_block_stats(_endpoint_diff())
-    assert float(row["nw_t"]) > kr["nw_t"], (
-        f"Manuscript claims Taiwan autocorrelation-robust significance is "
-        f"stronger than Korea's (subsec:taiwan) but Taiwan HAC t={float(row['nw_t']):.2f} "
-        f"<= Korea HAC t={kr['nw_t']:.2f}"
-    )
 
 
 def _n_implied_gap_component(name: str) -> float:
     """Q1-Q5 rho_c gap component the unequal quintile universes explain: the
     pooled rho_c slope on sqrt(2 ln(N-1)) evaluated across the per-window
     stock counts the two endpoint quintiles hold (subsec:threshold_vs_mean)."""
-    slopes = pd.read_csv(DATA / "mean_corr_diagnostic" / "mean_corr_vs_N_slopes.csv")
+    slopes = pd.read_csv(DATA / "network_size_resampling" / "rho_c_vs_N_slopes.csv")
     slope = float(slopes[slopes["quintile"] == 0].iloc[0]["rho_c_slope"])
     n1, n5 = (_per_q(name, g)["n_stocks"] for g in (1, 5))
     idx = n1.index.intersection(n5.index)
@@ -348,9 +378,10 @@ def _n_implied_gap_component(name: str) -> float:
 
 
 def test_taiwan_unequal_universes_bound_endpoint_gap():
-    """subsec:threshold_vs_mean: 'Applied to the network sizes of Q1 and Q5 in
-    each window, the Korean pooled slope accounts for ... 0.006 (5%) of the
-    Taiwanese one.'"""
+    """subsec:threshold_vs_mean: 'The Korean pooled slope accounts for ... and,
+    if the Taiwanese rho_c depends on N as the Korean rho_c does, for 0.006 (5%)
+    of the Taiwanese one.' subsec:resampling_method applies the slope to the
+    network sizes of Q1 and Q5 in each window."""
     implied = _n_implied_gap_component("taiwan")
     assert math.isclose(implied, 0.006, abs_tol=0.0005), (
         f"Manuscript claims the unequal Taiwanese universes contribute 0.006 to "
@@ -365,9 +396,9 @@ def test_taiwan_unequal_universes_bound_endpoint_gap():
 
 
 def test_korea_network_size_component_matches_taiwans_share():
-    """subsec:threshold_vs_mean: 'Applied to the network sizes of Q1 and Q5 in
-    each window, the Korean pooled slope accounts for 0.003 (5%) of the Korean
-    endpoint contrast and for 0.006 (5%) of the Taiwanese one.'"""
+    """subsec:threshold_vs_mean: 'The Korean pooled slope accounts for 0.003 (5%)
+    of the Korean endpoint contrast and, if the Taiwanese rho_c depends on N as
+    the Korean rho_c does, for 0.006 (5%) of the Taiwanese one.'"""
     implied = _n_implied_gap_component("korea_headline")
     assert implied > 0, (
         "Manuscript claims the Korean network-size component carries the same "
@@ -387,6 +418,24 @@ def test_korea_network_size_component_matches_taiwans_share():
     )
 
 
+def test_q1_network_smaller_than_q5_in_every_window():
+    """subsec:threshold_vs_mean: 'Because Q1 holds fewer stocks than Q5 in each
+    window, the network size alone produces part of the endpoint contrast.'
+    Asserted over every window of both markets, as the network-size component
+    that follows is computed in both."""
+    for name in ("korea_headline", "taiwan"):
+        sizes = _per_q(name, 1)[["n_stocks"]].join(
+            _per_q(name, 5)[["n_stocks"]], lsuffix="_q1", rsuffix="_q5", how="outer")
+        assert sizes.notna().all().all(), (
+            f"{name}: Q1 and Q5 do not share their windows, so 'in each window' "
+            "(subsec:threshold_vs_mean) cannot be checked")
+        bad = sizes[sizes["n_stocks_q1"] >= sizes["n_stocks_q5"]]
+        assert bad.empty, (
+            "Manuscript claims Q1 holds fewer stocks than Q5 in each window "
+            f"(subsec:threshold_vs_mean) but {name} has {len(bad)} windows "
+            f"where it does not, first at {bad.index[0].date()}")
+
+
 def _subperiod_endpoint() -> pd.DataFrame:
     return pd.read_csv(DATA / "subperiod" / "subperiod_endpoint.csv").set_index(
         ["market", "segment"])
@@ -398,8 +447,7 @@ def test_subperiod_korea_endpoint_attenuates():
     second-half contrast stays significant (Table tab:subperiod), has a block
     bootstrap p-value of 2.1e-3, and is positive in 71% of the second-half
     windows.' tab:subperiod prints the HAC t, 8.3 in the first half and 3.0 in
-    the second. sec:introduction prints the share, 'That difference narrows over
-    the second half of the Korean sample to 23% of its first-half size'. Significant is read as in subsec:inference, on both the
+    the second. Significant is read as in subsec:inference, on both the
     HAC t and the bootstrap."""
     ep = _subperiod_endpoint()
     early = ep.loc[("korea", "early")]
@@ -428,7 +476,7 @@ def test_subperiod_korea_endpoint_attenuates():
     claimed = float(_params_macros()["rhoCGapLateShareOfEarlyPct"].replace(r"\%", ""))
     assert abs(share - claimed) <= 0.5, (
         f"Manuscript claims the second-half gap is {claimed:.0f}% of its first-half "
-        f"size (sec:introduction, subsec:subperiod) but data shows {share:.1f}%"
+        f"size (subsec:subperiod) but data shows {share:.1f}%"
     )
     assert 0 < share < 100, (
         f"Manuscript claims the Korean gap compresses and keeps its sign "
@@ -581,9 +629,15 @@ def test_subperiod_second_half_matches_median_split():
 
 def test_subperiod_second_half_ordering_and_steps():
     """subsec:subperiod: 'In the second half, the Q1--Q2 step of +0.030 is
-    significant (HAC t = 6.3), whereas neither the Q2--Q3 step (HAC t = -0.1)
-    nor the Q3--Q4 step (HAC t = 1.2) is. The means of Q2, Q3, and Q4 lie within
-    0.005 of each other, and the Q4--Q5 step is -0.012 (HAC t = -2.2).'"""
+    significant (HAC t = 6.3) and exceeds the second-half endpoint contrast, so
+    the three later steps sum to a fall. The second-half Q4--Q5 step is -0.012
+    (HAC t = -2.2)'. subsec:korean_middle_steps: 'In the second half of the
+    windows, neither the Q2--Q3 step (HAC t = -0.1) nor the Q3--Q4 step (HAC
+    t = 1.2) is significant. In the second half, the means of Q2, Q3, and Q4
+    lie within 0.005 of each other.'
+    subsec:limits: 'The Korean rise through Q4 holds for all windows taken
+    together rather than for every period', which the second-half Q2--Q3 and
+    Q3--Q4 steps show."""
     post = pd.read_csv(DATA / "subperiod" / "subperiod_second_half.csv").set_index(
         "quintile")
     means = post.sort_index()["mean_rho_c"].tolist()
@@ -597,8 +651,8 @@ def test_subperiod_second_half_ordering_and_steps():
         f"Manuscript claims 'the Q1--Q2 step of +0.030' in the second half "
         f"(subsec:subperiod) but data shows {q2['step_mean_diff']:.4f}"
     )
-    assert q2["step_mean_diff"] >= means[4] - means[0], (
-        f"Manuscript claims the second-half Q1--Q2 step 'exceeds the whole "
+    assert q2["step_mean_diff"] > means[4] - means[0], (
+        f"Manuscript claims the second-half Q1--Q2 step 'exceeds the second-half "
         f"endpoint contrast' (subsec:subperiod) but the step {q2['step_mean_diff']:+.4f} "
         f"falls short of the endpoint {means[4] - means[0]:+.4f}"
     )
@@ -634,7 +688,7 @@ def test_subperiod_second_half_ordering_and_steps():
                  - post.loc[[2, 3, 4], "mean_rho_c"].min())
     assert math.isclose(span, 0.005, abs_tol=ABS_TOL_RHO), (
         f"Manuscript claims 'The means of Q2, Q3, and Q4 lie within "
-        f"0.005 of each other' (subsec:subperiod) but data shows {span:.4f}"
+        f"0.005 of each other' (subsec:korean_middle_steps) but data shows {span:.4f}"
     )
 
 
@@ -680,9 +734,12 @@ def test_robustness_inversions_significance():
 
 
 def test_every_check_but_the_null_keeps_the_endpoint_positive():
-    """subsec:main_result: "The shuffled-returns null, which removes every
-    correlation between stocks, is the only check that reverses the endpoint
-    contrast (Table tab:robustness_contrast)." The set of
+    """subsec:main_result: "The shuffled-returns null, which leaves only noise,
+    reverses the endpoint contrast, whereas Marchenko--Pastur clipping, which
+    removes noise, widens it (Table tab:robustness_contrast), so noise does not
+    produce the rise." subsec:dissipation_mechanism: "None of the exchange
+    board, the sector mix, and the estimation settings accounts for the
+    endpoint contrast". The set of
     checks is read off tab:robustness_contrast itself, so a row added to the
     table is covered without editing this test. Each row's endpoint cell prints
     one macro, whose value carries the sign (a retention share is positive
@@ -709,19 +766,20 @@ def test_every_check_but_the_null_keeps_the_endpoint_positive():
     )
     negative = {k: v for k, v in rows.items() if v <= 0}
     assert not negative, (
-        "Manuscript claims every check other than the shuffled-returns null "
-        f"keeps the endpoint contrast positive (subsec:main_result) but {negative}"
+        "Manuscript claims that none of the exchange board, the sector mix, and "
+        "the estimation settings accounts for the endpoint contrast "
+        f"(subsec:dissipation_mechanism) but {negative}"
     )
 
 
 def test_interior_ordering_reverses_only_at_q3q4_and_not_significant():
-    """subsec:main_result, of the KOSPI-only universe: 'Neither its Q2--Q3 step
-    (HAC t = 0.17) nor its Q3--Q4 step, at which its two means reverse (HAC
-    t = -0.87), is significant.'
+    """subsec:korean_middle_steps: 'In the KOSPI-only panel, the mean of Q4
+    lies below the mean of Q3 (Table tab:robustness_contrast). Neither the
+    KOSPI-only Q2--Q3 step nor the KOSPI-only Q3--Q4 step is significant'.
     Marchenko--Pastur clipping 'keeps the five means ordered', ranking size
-    within sectors keeps 'the ordering of all five means', and rho_c^chi 'rises
-    at every step except Q3--Q4, at which its two means are equal at three
-    decimals', a tie that test_chi_peak_monotone_ordering reads at three
+    within sectors keeps 'the ordering of all five means', and rho_c^chi's 'Q3
+    and Q4 means are equal at three decimals' (subsec:korean_middle_steps;
+    tab:robustness_contrast marks the row 'Q3--Q4 equal'), a tie that test_chi_peak_monotone_ordering reads at three
     decimals and that this test reads unrounded. The interior ordering is Q1 < Q2 < Q3 < Q4 on the
     cross-window means. Two claims: which step reverses, and that the reversal
     is not significant. The check the sentence names is checked against the set
@@ -755,39 +813,21 @@ def test_interior_ordering_reverses_only_at_q3q4_and_not_significant():
     )
 
 
-def test_rho_c_vs_mean_corr_N_divergence():
+def test_rho_c_slope_on_network_size():
     """subsec:threshold_vs_mean: "In the regression on sqrt(2 ln(N-1)), the
-    pooled slope of rho_c is 0.167 (R^2 = 0.99) and is positive in every
-    quintile, whereas the pooled slope of the mean |rho_ij| is 0.000 to three
-    decimal places. From N = 50 to 300, rho_c rises by 0.093 to 0.106 across the
-    quintiles, whereas the mean |rho_ij| changes by only -0.001 to 0.001."
-    sec:introduction: "In Korea, as more stocks are drawn from each quintile into
-    its graph, rho_c rises, whereas the mean correlation of the same stocks stays
-    almost constant"; sec:conclusion: "In Korea, unlike the
-    mean correlation of the same stocks, rho_c rises with the number of stocks
-    drawn per quintile"."""
-    sl = pd.read_csv(DATA / "mean_corr_diagnostic" / "mean_corr_vs_N_slopes.csv")
+    pooled slope of rho_c is \\rhoCSlopeSqrtLogN. The slope of each quintile is
+    positive." """
+    sl = pd.read_csv(DATA / "network_size_resampling" / "rho_c_vs_N_slopes.csv")
     pooled = sl[sl["quintile"] == 0].iloc[0]
-    assert math.isclose(float(pooled["rho_c_slope"]), 0.167, abs_tol=ABS_TOL_SLOPE), (
-        f"Manuscript claims pooled rho_c slope on sqrt(2 ln(N-1)) = 0.167 "
+    printed = float(_params_macros()["rhoCSlopeSqrtLogN"])
+    assert math.isclose(float(pooled["rho_c_slope"]), printed, abs_tol=ABS_TOL_SLOPE), (
+        f"Manuscript prints the pooled rho_c slope on sqrt(2 ln(N-1)) as {printed} "
         f"(subsec:threshold_vs_mean) but data shows {float(pooled['rho_c_slope']):.3f}"
     )
-    assert math.isclose(float(pooled["mean_corr_slope"]), 0.000, abs_tol=ABS_TOL_SLOPE), (
-        f"Manuscript claims pooled segment-mean slope = 0.000 (subsec:threshold_vs_mean) "
-        f"but data shows {float(pooled['mean_corr_slope']):.3f}"
-    )
     per_q = sl[sl["quintile"] != 0]
-    assert (per_q["rho_c_slope"] > 0).all(), (
-        "Manuscript claims rho_c rises with N in every quintile (subsec:threshold_vs_mean) "
-        f"but slopes are {per_q['rho_c_slope'].tolist()}"
-    )
-    # rho_c drift 0.093-0.106 dominates the mean-|rho| drift -0.001-0.001.
-    assert (per_q["rho_c_drift_50_to_300"].min()
-            > per_q["mean_corr_drift_50_to_300"].max()), (
-        "Manuscript claims the rho_c drift (0.093-0.106) dominates the segment-mean "
-        "drift (-0.001-0.001) across quintiles (subsec:threshold_vs_mean) but data shows "
-        f"min rho_c drift {per_q['rho_c_drift_50_to_300'].min():.3f} <= "
-        f"max mean drift {per_q['mean_corr_drift_50_to_300'].max():.3f}"
+    assert len(per_q) == 5 and (per_q["rho_c_slope"] > 0).all(), (
+        "Manuscript claims the rho_c slope is positive in every quintile "
+        f"(subsec:threshold_vs_mean) but slopes are {per_q['rho_c_slope'].tolist()}"
     )
 
 
@@ -924,39 +964,39 @@ def test_meancorr_spearman_coupling():
 
 def test_meancorr_comovement_monotone():
     """subsec:main_result: 'the cross-window mean bar(rho_c) rises at every
-    step'. subsec:threshold_vs_mean: 'The mean |rho_ij| rises at every step,
-    by only \\meanCorrStepQfourQfive from Q4 to Q5 (Table tab:percolation), so
-    it orders the quintiles as bar(rho_c) does.'"""
+    step'. subsec:threshold_vs_mean: 'The mean |rho_ij| rises from
+    \\meanAbsCorrQone in Q1 to \\meanAbsCorrQfive in Q5 (HAC t =
+    \\tHacMeanCorrQoneQfive; Table tab:percolation).' Significant is read as
+    in subsec:inference, on both the HAC t and the bootstrap of the per-window
+    Q5-Q1 difference."""
     df = pd.read_csv(
         DATA / "mean_corr_diagnostic" / "cross_quintile_summary.csv"
     ).sort_values("quintile")
     rho_c = df["rho_c_mean"].tolist()
-    mean_corr = df["mean_abs_corr_mean"].tolist()
     assert all(a < b for a, b in zip(rho_c, rho_c[1:])), (
         f"Manuscript claims rho_c rises monotonically Q1->Q5 (subsec:main_result) "
         f"but data shows {rho_c}"
     )
-    assert all(a < b for a, b in zip(mean_corr[:4], mean_corr[1:4])), (
-        f"Manuscript claims mean|rho| rises through Q4 (subsec:threshold_vs_mean) "
-        f"but data shows {mean_corr}"
+    mc = pd.read_csv(DATA / "mean_corr_diagnostic" / "per_window_mean_corr.csv")
+    per_window = mc.pivot(index="date", columns="quintile", values="mean_abs_corr")
+    ep = hac_block_stats((per_window[5] - per_window[1]).dropna().to_numpy())
+    assert ep["nw_t"] > 1.645 and ep["block_boot_p_one_sided"] < 0.05, (
+        "Manuscript claims the mean |rho_ij| rises from Q1 to Q5 "
+        f"(subsec:threshold_vs_mean) but HAC t={ep['nw_t']:.2f}, "
+        f"block bootstrap p={ep['block_boot_p_one_sided']:.3f}"
     )
-    step = mean_corr[4] - mean_corr[3]
-    assert step > 0 and math.isclose(step, float(_params_macros()["meanCorrStepQfourQfive"]),
-                                     abs_tol=0.00005), (
-        f"Manuscript claims mean|rho| rises by \\meanCorrStepQfourQfive from Q4 to Q5 "
-        f"(subsec:threshold_vs_mean) but the Q4--Q5 step is {step:+.5f}"
-    )
-    assert (sorted(range(5), key=lambda i: rho_c[i])
-            == sorted(range(5), key=lambda i: mean_corr[i])), (
-        f"Manuscript claims the two rank the five quintiles identically "
-        f"(subsec:threshold_vs_mean) but rho_c={rho_c} and mean|rho|={mean_corr}"
+    printed_t = float(_params_macros()["tHacMeanCorrQoneQfive"])
+    assert math.isclose(ep["nw_t"], printed_t, abs_tol=0.05), (
+        f"Manuscript prints the mean |rho_ij| endpoint HAC t as {printed_t} "
+        f"(tHacMeanCorrQoneQfive, subsec:threshold_vs_mean) but data gives "
+        f"{ep['nw_t']:.2f}"
     )
 
 
 def test_meancorr_per_quintile_levels():
-    """tab:percolation 'Mean |rho_ij|' row: 0.182, 0.198, 0.204, 0.207, 0.207
+    """tab:percolation 'Mean |rho_ij|' row: 0.182, 0.198, 0.204, 0.206, 0.207
     (macros meanAbsCorrQone..Qfive)."""
-    expected = [0.182, 0.198, 0.204, 0.207, 0.207]
+    expected = [0.182, 0.198, 0.204, 0.206, 0.207]
     df = pd.read_csv(
         DATA / "mean_corr_diagnostic" / "cross_quintile_summary.csv"
     ).sort_values("quintile")
@@ -968,10 +1008,16 @@ def test_meancorr_per_quintile_levels():
         )
 
 
-def test_meancorr_residual_ordering_holds_at_every_polynomial_degree():
+def test_meancorr_residual_significance_at_every_polynomial_degree():
     """subsec:threshold_vs_mean: 'Polynomials of degree one to five leave
-    residuals that rise at every step, with endpoint contrasts between 27% and
-    53% of that of rho_c.' Recomputed from the per-window cells."""
+    residual endpoint contrasts between 27% and 53% of that of rho_c. At every
+    degree, the residual endpoint contrast and the residual Q1--Q2 step are
+    significant, whereas each of the three residual steps above Q2 is not
+    significant at one degree or more. The residual Q2--Q3 step is significant
+    at no degree.' A contrast is significant as subsec:inference defines it: the
+    one-sided HAC t and the block bootstrap both reject at 5%, on the
+    per-window differences of the residuals. Recomputed from the per-window
+    cells."""
     mc = pd.read_csv(DATA / "mean_corr_diagnostic" / "per_window_mean_corr.csv",
                      parse_dates=["date"])
     parts = []
@@ -981,17 +1027,37 @@ def test_meancorr_residual_ordering_holds_at_every_polynomial_degree():
                                 on="date").assign(quintile=g))
     long = pd.concat(parts, ignore_index=True).dropna()
     raw = long.groupby("quintile")["rho_c"].mean().sort_index()
+    def significant(diff: np.ndarray) -> bool:
+        s = hac_block_stats(diff)
+        return s["nw_t"] > 1.645 and s["block_boot_p_one_sided"] < 0.05
+
     shares = []
+    upper_sig = {(2, 3): [], (3, 4): [], (4, 5): []}
     for deg in range(1, 6):
         fit = np.polyval(np.polyfit(long["mean_abs_corr"], long["rho_c"], deg),
                          long["mean_abs_corr"])
         rm = (long["rho_c"] - fit).groupby(long["quintile"]).mean().sort_index().tolist()
-        assert all(a < b for a, b in zip(rm, rm[1:])), (
-            f"Manuscript claims a degree-{deg} residual rises at every step "
-            f"(subsec:threshold_vs_mean) but its per-quintile means are "
-            f"{[round(x, 4) for x in rm]}"
-        )
         shares.append((rm[-1] - rm[0]) / float(raw.iloc[-1] - raw.iloc[0]))
+        cells = long.assign(resid=long["rho_c"] - fit).pivot(
+            index="date", columns="quintile", values="resid")
+        for lo, hi in ((1, 5), (1, 2)):
+            assert significant((cells[hi] - cells[lo]).to_numpy()), (
+                f"Manuscript claims the residual Q{lo}-Q{hi} contrast is significant "
+                f"at every degree (subsec:threshold_vs_mean) but degree {deg} "
+                "does not reject on both statistics"
+            )
+        for lo, hi in upper_sig:
+            upper_sig[(lo, hi)].append(significant((cells[hi] - cells[lo]).to_numpy()))
+    for (lo, hi), sig in upper_sig.items():
+        assert not all(sig), (
+            f"Manuscript claims no residual step above Q2 is significant at every "
+            f"degree (subsec:threshold_vs_mean) but Q{lo}-Q{hi} is at all five"
+        )
+    assert not any(upper_sig[(2, 3)]), (
+        "Manuscript claims the residual Q2-Q3 step is significant at no degree "
+        "(subsec:threshold_vs_mean) but it is at degrees "
+        f"{[d + 1 for d, s in enumerate(upper_sig[(2, 3)]) if s]}"
+    )
     for claimed, got in ((27, min(shares)), (53, max(shares))):
         assert math.isclose(got * 100, claimed, abs_tol=0.5), (
             f"Manuscript prints the degree range of the residual share as 27% to "
@@ -1001,9 +1067,12 @@ def test_meancorr_residual_ordering_holds_at_every_polynomial_degree():
 
 def test_meancorr_residual_gradient_is_a_fraction_of_the_raw_one():
     """subsec:threshold_vs_mean: 'A cubic regression of rho_c on the mean
-    |rho_ij| over all cells leaves residuals whose quintile means still rise at
-    every step, with an endpoint contrast of rhoCResidGapPctOfRaw of that of
-    rho_c.'
+    |rho_ij| over all cells leaves residuals whose endpoint contrast is
+    rhoCResidGapPctOfRaw of that of rho_c and significant (HAC t =
+    tHacMeanCorrResidQoneQfive).' The abstract: 'a cubic regression of the
+    threshold on that mean leaves 33% of the threshold's difference, a
+    significant remainder'. sec:introduction and
+    sec:conclusion state the same remainder.
     Recomputed here from the per-window cells, independently of
     scripts/scaling/run_mean_corr_diagnostic.py, which writes the same quantity into
     coupling.csv for the macro."""
@@ -1025,11 +1094,18 @@ def test_meancorr_residual_gradient_is_a_fraction_of_the_raw_one():
     raw_gap = float(raw.iloc[-1] - raw.iloc[0])
     resid_gap = float(rm.iloc[-1] - rm.iloc[0])
 
-    resid = rm.tolist()
-    assert all(a < b for a, b in zip(resid, resid[1:])), (
-        "Manuscript claims the residual of the cubic in mean|rho| 'still "
-        "rise[s] at every step' (subsec:threshold_vs_mean) but the "
-        f"residual per-quintile means are {[round(x, 4) for x in resid]}"
+    per_window = long.pivot(index="date", columns="quintile", values="resid")
+    ep = hac_block_stats((per_window[5] - per_window[1]).to_numpy())
+    assert ep["nw_t"] > 1.645 and ep["block_boot_p_one_sided"] < 0.05, (
+        "Manuscript claims the cubic's residual endpoint contrast is significant "
+        f"(subsec:threshold_vs_mean, abstract) but HAC t={ep['nw_t']:.2f}, "
+        f"block bootstrap p={ep['block_boot_p_one_sided']:.3f}"
+    )
+    printed_t = float(_params_macros()["tHacMeanCorrResidQoneQfive"])
+    assert math.isclose(ep["nw_t"], printed_t, abs_tol=0.05), (
+        f"Manuscript prints the residual endpoint HAC t as {printed_t} "
+        f"(tHacMeanCorrResidQoneQfive, subsec:threshold_vs_mean) but data "
+        f"gives {ep['nw_t']:.2f}"
     )
     share = resid_gap / raw_gap
     claimed = float(_params_macros()["rhoCResidGapPctOfRaw"].replace(r"\%", ""))
@@ -1074,8 +1150,8 @@ def test_tab1_chi_peak_means():
 
 
 def test_chi_peak_monotone_ordering():
-    """subsec:main_result: 'The susceptibility-peak threshold rho_c^chi rises at
-    every step except Q3--Q4, at which its two means are equal at three
+    """subsec:korean_middle_steps: 'The Q3--Q4 step is not significant ...
+    when the threshold is rho_c^chi, whose Q3 and Q4 means are equal at three
     decimals'; tab:robustness_contrast prints its endpoint contrast, 0.047;
     tab:robustness_summary and
     tab:robustness_contrast mark the row 'Q3--Q4 equal', read at the three
@@ -1085,7 +1161,7 @@ def test_chi_peak_monotone_ordering():
     others = [(a, b) for i, (a, b) in enumerate(zip(means, means[1:]), start=1) if i != 3]
     assert all(a < b for a, b in others) and means[2] == means[3], (
         f"Manuscript claims the chi-peak means rise at every step except Q3--Q4, "
-        f"where they are equal at three decimals (subsec:main_result), but they "
+        f"where they are equal at three decimals (tab:robustness_contrast), but they "
         f"are {means}"
     )
 
@@ -1107,7 +1183,7 @@ def test_chi_peak_q5_q1_gap_significance():
 
 
 def test_chi_peak_top_flattens():
-    """subsec:researcher_choices: 'Its Q3--Q4 and Q4--Q5 steps are not
+    """subsec:researcher_choices: 'The Q3--Q4 and Q4--Q5 steps of rho_c^chi are not
     significant, at HAC t = 0.25 and t = 0.63' (\\tHacChiQthreeQfour,
     \\tHacChiQfourQfive). A step is significant only when both the HAC t and
     the block bootstrap reject, so a HAC t below the one-sided 5% critical value
@@ -1638,10 +1714,11 @@ def test_window_sensitivity_T60_row_is_the_headline():
 
 
 def test_window_sensitivity_gap_widens_with_W():
-    """subsec:main_result: 'The endpoint contrast widens with the window length
-    between 30 and 252 days, so it is not larger at the 60-day window of the
-    main estimate than at the longer windows.' tab:robustness_contrast prints
-    the contrast at each length."""
+    """subsec:main_result: 'The endpoint contrast widens with the window length,
+    from \\rhoCGapWthirty at \\windowDaysWthirty days to \\rhoCGapWtwofifty at
+    \\windowDaysWtwofifty days, so the choice of the \\paperWindowDays-day window
+    for the main estimate does not maximize the contrast.'
+    tab:robustness_contrast prints the contrast at each length."""
     df = pd.read_csv(DATA / "window_sensitivity" / "summary.csv")
     wide = df.pivot(index="window_days", columns="size_group", values="rho_c_mean")
     gap = (wide[5] - wide[1]).sort_index()
@@ -1652,6 +1729,153 @@ def test_window_sensitivity_gap_widens_with_W():
             f"but gap(W={windows[i]})={gap.iloc[i]:.4f} >= "
             f"gap(W={windows[i+1]})={gap.iloc[i+1]:.4f}"
         )
+
+
+def _setting_panel(folder: Path, column: str = "rho_c") -> pd.DataFrame:
+    return pd.concat({g: pd.read_csv(folder / f"rolling_percolation_Q{g}.csv",
+                                     index_col="date")[column] for g in range(1, 6)},
+                     axis=1).dropna()
+
+
+def _significant(stats: dict) -> bool:
+    """subsec:inference: both the HAC t and the block bootstrap reject at 5%."""
+    return stats["nw_t"] > 1.645 and stats["block_boot_p_one_sided"] < 0.05
+
+
+def test_setting_step_verdicts():
+    """subsec:main_result, Estimation settings: 'At each window length and
+    observation requirement, the five means stay ordered. At each of these
+    settings, the endpoint contrast and the Q1--Q2 and Q2--Q3 steps are
+    significant ... The Q3--Q4 step
+    is significant at each of these settings except the windows of
+    \\windowDaysWthirty days. The Q4--Q5 step is significant only on the windows
+    of \\windowDaysWhundredtwenty and \\windowDaysWtwofifty days.' The settings
+    are derived from the sweep folders, and the lag rule is subsec:checks':
+    the bandwidth and the block length rise to one more than the largest lag at
+    which two windows share returns. tab:setting_steps prints each HAC t."""
+    from fn_percolation.overlap_inference import overlap_span
+    macros = _params_macros()
+    names = {30: "Wthirty", 120: "Whundredtwenty", 252: "Wtwofifty"}
+    settings = []
+    for folder in sorted((DATA / "window_sensitivity").glob("W*")):
+        w = int(folder.name[1:])
+        if w != WINDOW:
+            settings.append((names[w], folder, w))
+    fracs = sorted(float(f.name[1:]) for f in (DATA / "min_valid_fraction_sensitivity").glob("F*"))
+    settings += [("ObsReqLo", DATA / "min_valid_fraction_sensitivity" / f"F{fracs[0]}", WINDOW),
+                 ("ObsReqHi", DATA / "min_valid_fraction_sensitivity" / f"F{fracs[-1]}", WINDOW)]
+    assert len(settings) == 5, f"tab:setting_steps prints five settings, the sweeps hold {settings}"
+    pairs = {"QoneQtwo": (1, 2), "QtwoQthree": (2, 3), "QthreeQfour": (3, 4),
+             "QfourQfive": (4, 5), "QoneQfive": (1, 5)}
+    for name, folder, w in settings:
+        panel = _setting_panel(folder)
+        lag = overlap_span(w, STEP) + 1
+        verdict = {}
+        for key, (lo, hi) in pairs.items():
+            st = hac_block_stats((panel[hi] - panel[lo]).to_numpy(), min_lag=lag, min_block=lag)
+            verdict[key] = _significant(st)
+            printed = float(macros[f"tHac{name}{key}"])
+            assert math.isclose(st["nw_t"], printed, abs_tol=0.05), (
+                f"tab:setting_steps prints HAC t {printed} for {name} {key} "
+                f"but data gives {st['nw_t']:.2f}")
+        assert verdict["QoneQfive"] and verdict["QoneQtwo"] and verdict["QtwoQthree"], (
+            f"subsec:main_result claims the endpoint contrast and the Q1--Q2 and "
+            f"Q2--Q3 steps are significant at every setting, but not at {name}: {verdict}")
+        assert verdict["QthreeQfour"] == (name != "Wthirty"), (
+            f"subsec:main_result claims the Q3--Q4 step is significant at every setting "
+            f"except the 30-day windows, but at {name} it is {verdict['QthreeQfour']}")
+        assert verdict["QfourQfive"] == (name in ("Whundredtwenty", "Wtwofifty")), (
+            f"subsec:main_result claims the Q4--Q5 step is significant only on the "
+            f"120- and 252-day windows, but at {name} it is {verdict['QfourQfive']}")
+
+
+def test_significant_steps_exceed_their_draw_spread():
+    """subsec:researcher_choices (Supplementary Material): 'Every significant
+    step is at least \\stepDrawSpreadRatioMin times its spread across the
+    draws, so the random draws of stocks alone do not produce it.' Asserted
+    over every step and endpoint contrast of both markets that subsec:inference
+    finds significant, derived from data/bandwidth_sensitivity/steps.csv."""
+    verdicts = pd.read_csv(DATA / "bandwidth_sensitivity" / "steps.csv")
+    verdicts = verdicts[verdicts["bandwidth"] == "automatic"]
+    printed = float(_params_macros()["stepDrawSpreadRatioMin"])
+    ratios = {}
+    for market, sub in (("korea", "korea_headline"), ("taiwan", "taiwan")):
+        ps = pd.read_csv(DATA / sub / "rolling_percolation_per_seed.csv")
+        wide = ps.pivot_table(index=["seed", "date"], columns="quintile", values="rho_c")
+        for _, row in verdicts[verdicts["market"] == market].iterrows():
+            if not row["significant"]:
+                continue
+            lo, hi = (int(q[1:]) for q in row["pair"].split("-"))
+            sm = (wide[hi] - wide[lo]).groupby(level="seed").mean()
+            ratios[(market, row["pair"])] = float(sm.mean() / sm.std(ddof=1))
+    assert len(ratios) >= 8, f"expected the significant steps of both markets, got {ratios}"
+    worst = min(ratios, key=ratios.get)
+    assert printed <= ratios[worst] < printed + 0.1, (
+        f"The Supplementary Material prints every significant step as at least "
+        f"{printed} times its spread across the draws, but {worst} gives "
+        f"{ratios[worst]:.3f}")
+
+
+def test_within_sector_floor_places_stocks_in_every_quintile():
+    """subsec:checks: 'The within-sector check keeps the KRX sectors of at
+    least \\minSectorSize stocks, so that each kept sector places at least
+    \\minSectorStocksPerQuintile stocks in every quintile.' Decided on the
+    assignment that sector_loader.within_sector_quintiles uses, a cut of the
+    sector's size ranks into five equal groups, at the smallest kept sector."""
+    from fn_percolation.constants import MIN_SECTOR_SIZE
+    ranks = pd.Series(range(1, MIN_SECTOR_SIZE + 1), dtype=float)
+    groups = pd.qcut(ranks.rank(method="first"), 5, labels=False)
+    printed = int(_params_macros()["minSectorStocksPerQuintile"])
+    assert groups.value_counts().min() == printed, (
+        f"subsec:checks claims a sector of {MIN_SECTOR_SIZE} stocks places at least "
+        f"{printed} in every quintile, but the cut gives {groups.value_counts().to_dict()}")
+
+
+def test_q3q4_power_rule_per_check():
+    """subsec:korean_middle_steps: 'The Q3--Q4 step is not significant when the
+    threshold is rho_c^chi ... or on windows of \\windowDaysWthirty days, and
+    each of these two tests detects a step of the main estimate's size with
+    \\detectPowerPct power ... The Q3--Q4 step is not significant either when
+    size is ranked within sectors, and neither the Q2--Q3 step nor the Q3--Q4
+    step is significant in the KOSPI-only panel, but neither of these two tests
+    detects a step of the main estimate's size'. subsec:researcher_choices
+    prints the 30-day and rho_c^chi limits as upper bounds below the main
+    step. The detection limit is run_weekly_rho_c.py's: (z_0.05 + z_0.80) HAC
+    standard errors; the KOSPI-only limits are test_kospi_only_interior_steps_are_unresolved's."""
+    from fn_percolation.overlap_inference import overlap_span
+    z = 1.645 + 0.842
+    macros = _params_macros()
+    main = _setting_panel(DATA / "korea_headline")
+    main_step = float((main[4] - main[3]).mean())
+    printed_main = float(macros["rhoCStepHeadlineQthreeQfour"])
+    w30 = _setting_panel(DATA / "window_sensitivity" / "W30")
+    lag = overlap_span(30, STEP) + 1
+    st30 = hac_block_stats((w30[4] - w30[3]).to_numpy(), min_lag=lag, min_block=lag)
+    chi = _setting_panel(DATA / "susceptibility", "rho_c_chi")
+    st_chi = hac_block_stats((chi[4] - chi[3]).to_numpy())
+    ws = _setting_panel(DATA / "within_sector")
+    st_ws = hac_block_stats((ws[4] - ws[3]).to_numpy())
+    for label, st, macro in (("30-day", st30, "detectWthirtyQthreeQfour"),
+                             ("rho_c^chi", st_chi, "detectChiQthreeQfour")):
+        limit = z * st["mean_diff"] / st["nw_t"]
+        assert not _significant(st) and limit < main_step, (
+            f"subsec:korean_middle_steps claims the {label} Q3--Q4 test is not "
+            f"significant and detects the main step {main_step:.4f} with 80% power, "
+            f"but its limit is {limit:.4f}")
+        printed = float(macros[macro])
+        assert limit <= printed < printed_main, (
+            f"subsec:researcher_choices prints the {label} limit as at most {printed}, "
+            f"below the main step {printed_main}, but the limit is {limit:.4f}")
+    limit_ws = z * st_ws["mean_diff"] / st_ws["nw_t"]
+    printed_ws = float(macros["detectWithinSectorQthreeQfour"])
+    printed_fine = float(macros["rhoCStepHeadlineQthreeQfourFine"])
+    assert printed_ws <= limit_ws and main_step <= printed_fine < printed_ws, (
+        f"subsec:size_confounds prints the within-sector limit as at least {printed_ws}, "
+        f"above the main Q3--Q4 step of {printed_fine}, but the limit is "
+        f"{limit_ws:.5f} and the step {main_step:.5f}")
+    assert not _significant(st_ws) and limit_ws > main_step, (
+        "subsec:korean_middle_steps claims the within-sector Q3--Q4 test does not detect "
+        f"the main step {main_step:.4f} with 80% power, but its limit is {limit_ws:.4f}")
 
 
 def test_window_sensitivity_level_and_top_steps():
@@ -1730,8 +1954,9 @@ def test_min_valid_fraction_not_load_bearing():
 # ---------------------------------------------------------------------------
 
 def test_dgp_eq8_random_graph_criterion_holds():
-    """subsec:toy_model: 'In it, the cutoff of fastest change lies within
-    \\dgpEqEightMaxGap of tilde-rho_c at every simulated delta.' si:eq9_verification: 'Table tab:dgp_eq9 gives, in each of
+    """subsec:toy_model: 'In the simulation, the cutoff of fastest change lies within
+    \\dgpEqEightMaxGap of tilde-rho_c at every simulated delta from
+    \\dgpDeltaGridMin to \\dgpDeltaGridMax.' si:eq9_verification: 'Table tab:dgp_eq9 gives, in each of
     the \\nDgpEqEightCells cells of delta and peer-coupling matrix, ...'
 
     The cell count is checked against the cells the file holds.
@@ -1752,10 +1977,14 @@ def test_dgp_eq8_random_graph_criterion_holds():
     falls = pd.concat([-g.sort_values("delta")["rho_c_degree_one_mean"].diff().dropna()
                        for _, g in df.groupby("W_type")])
     printed_fall = float(_params_macros()["dgpDegOneMinFall"])
-    assert math.isclose(falls.min(), printed_fall, abs_tol=0.0005), (
-        f"subsec:toy_model prints the smallest fall of tilde-rho_c as "
-        f"{printed_fall} but the file gives {falls.min():.4f}")
+    assert printed_fall <= falls.min() < printed_fall + 0.001, (
+        f"subsec:toy_model prints 'falls by at least {printed_fall}', a lower bound "
+        f"at three decimals, but the smallest fall is {falls.min():.4f}")
     max_gap = (df["rho_c_sim_mean"] - df["rho_c_degree_one_mean"]).abs().max()
+    printed_gap = float(_params_macros()["dgpEqEightMaxGap"])
+    assert printed_gap - 0.001 < max_gap <= printed_gap, (
+        f"subsec:toy_model prints 'lies within {printed_gap}', an upper bound at "
+        f"three decimals, but the largest gap is {max_gap:.4f}")
     assert max_gap < falls.min() / 2, (
         f"subsec:toy_model infers from the gap ({max_gap:.4f}) and the smallest "
         f"fall ({falls.min():.4f}) that the simulated rho_c falls at every step, "
@@ -2605,15 +2834,16 @@ def test_declared_intermediates_feed_a_published_directory():
 def test_shuffled_null_asymmetry_tracks_the_marginals_the_shuffle_preserves():
     """subsec:dissipation_mechanism sources the shuffled null's reversed
     Q1-above-Q5 asymmetry in the return marginals, which the per-stock time
-    permutation preserves exactly: "The shuffled-returns null leaves only noise
-    and reverses the endpoint contrast, because Q1's returns have the heaviest
-    tails, which widen the sampling distribution of the correlations of
-    independent series and so raise its upper quantile, where rho_c lies";
-    subsec:null_robustness: "The mean excess kurtosis of daily returns falls at
-    every step across the quintiles, from 3.8 in Q1 to 2.0 in Q5, so the returns
-    of the smaller stocks have heavier tails, which widen the sampling
-    distribution of the correlations of independent series and so reverse the
-    endpoint contrast of the shuffled-returns null."
+    permutation preserves exactly: "Q1's returns have the heaviest tails, which
+    can raise the upper quantile of the sampling distribution of the
+    correlations of independent series, where rho_c lies, and so can produce
+    the reversed endpoint contrast of the shuffled-returns null";
+    subsec:null_robustness: "Averaged over the stocks of each window's quintile
+    and then over the windows, the excess kurtosis of the Korean daily returns
+    falls at every step across the quintiles, from 3.8 in Q1 to 2.0 in Q5, so the returns
+    of the smaller stocks have heavier tails, which can raise the upper quantile
+    of the sampling distribution of the correlations of independent series and
+    so reverse the endpoint contrast of the shuffled-returns null."
 
     Monotonicity is a quantifier over all five quintiles, so it is asserted over
     the set rather than over the two the sentence names, and the per-quintile
@@ -2738,7 +2968,7 @@ def test_kr_universe_admits_only_the_sessions_fnguide_prices():
 
 def test_taiwan_panel_omits_the_delisted_names_it_says_it_omits():
     """subsec:data_description: 'The Taiwanese panel holds the common stocks
-    ... except some delisted stocks that its data source does not price' and
+    ... except some delisted stocks whose prices the Taiwanese data lack' and
     'FinMind ... provides no adjusted close for those delisted stocks.'
 
     Asserted as the property rather than as the wording: of the delisted names
@@ -2771,9 +3001,10 @@ def test_taiwan_panel_omits_the_delisted_names_it_says_it_omits():
 
 def test_taiwan_returns_fall_on_listed_sessions():
     """si:settings: 'The panel therefore admits a Taiwanese trading day only
-    if FinMind carries the stock's share count on that day and, where the
-    stock printed a price on an earlier day, on the last such day, so no
-    return of the panel runs from a price set on the emerging board.'
+    if FinMind carries the stock's share count on that day. If the stock has a
+    price on an earlier day, FinMind must also carry the share count on the
+    latest earlier day with a price. [...] No return of the panel therefore runs from a price
+    set on the emerging board, because no return spans a dropped day.'
 
     The market cap is formed on the share count, so on the published panels
     every Taiwanese return must have a market cap on its own session and on
@@ -2919,9 +3150,7 @@ def test_every_verdict_holds_at_longer_bandwidths():
     """subsec:main_result: "In Korea, the tests with both the bandwidth and the
     block length set to \\bwShort windows, and with both set to \\bwLong
     windows, find the same steps significant". subsec:taiwan: the same of "the
-    same Taiwanese steps". subsec:researcher_choices: "the
-    tests at longer bandwidths, at which no significant step has a HAC
-    t-statistic below \\tHacBwMinSignificant." subsec:inference: "each test
+    same Taiwanese steps". subsec:inference: "each test
     is repeated with the bandwidth and the block length both raised from
     \\nwLagHeadline and \\blockBootLenHeadline windows to \\bwShort windows, and
     again with both raised to \\bwLong windows".
@@ -2939,13 +3168,6 @@ def test_every_verdict_holds_at_longer_bandwidths():
             f"(subsec:main_result) but the {market} {pair} verdicts are "
             f"{verdicts.to_dict()}"
         )
-    sig = steps[steps["significant"] & (steps["bandwidth"] != "automatic")]
-    floor = math.floor(float(sig["hac_t"].min()) * 10) / 10
-    assert math.isclose(floor, float(macros["tHacBwMinSignificant"]), abs_tol=1e-9), (
-        f"Manuscript prints {macros['tHacBwMinSignificant']} as the smallest HAC "
-        f"t of a significant step at the longer bandwidths, but the file gives "
-        f"{float(sig['hac_t'].min()):.3f}"
-    )
     row = steps[(steps["market"] == "korea") & (steps["pair"] == "Q2-Q3")
                 & (steps["bandwidth"] == macros["bwLong"])].iloc[0]
     redo = hac_block_stats(_adjacent_diff(2), min_lag=int(macros["bwLong"]),
@@ -2992,20 +3214,24 @@ def test_weekly_threshold_readings():
     \\wkWindowShort and \\wkWindowLong days keeps a significant endpoint
     contrast at both lengths ... Weekly returns reproduce the Q1--Q2 step at
     both lengths, the Q2--Q3 step only at \\wkWindowLong days, and the Q3--Q4
-    step only at \\wkWindowShort days. The weekly Q2--Q3 step at \\wkWindowShort
-    days and the weekly Q3--Q4 step at \\wkWindowLong days are not significant,
-    although at each of these lengths the weekly test detects a step of the
-    daily step's size ... On the windows of \\wkWindowShort and \\wkWindowLong
+    step only at \\wkWindowShort days ... At each length at which weekly returns
+    do not reproduce a step, the weekly test detects a step of the daily step's
+    size with \\detectPowerPct power ... On the windows of \\wkWindowShort and \\wkWindowLong
     days, the daily Korean Q4--Q5 step is significant, unlike on the
     \\paperWindowDays-day windows of the main estimate. The weekly Q4--Q5 step is
     not significant at either length, although the weekly test detects a step
     of the daily step's size with \\detectPowerPct power." subsec:taiwan:
     "Weekly returns reproduce the Taiwanese endpoint contrast and each
     Taiwanese step through Q4 on both window lengths of the weekly-threshold
-    check." The abstract: "Weekly returns on windows of about one and two
-    years keep each Taiwanese step through the fourth and the first Korean step
-    significant at both lengths, but the second and third Korean steps at only
-    one length each." Each daily step that is significant and that weekly
+    check." The abstract: "In weekly returns, which stale prices affect less,
+    each Taiwanese step through the fourth and, in both markets, the
+    difference between the two extreme quintiles are significant, whereas not
+    every Korean step is significant there or with other estimation settings."
+    sec:introduction: "In weekly returns, each Taiwanese step through the
+    fourth quintile and, in both markets, the difference between the smallest
+    and the largest quintile are significant, but not every Korean step is, so weekly
+    returns do not exclude stale prices as the source of the Korean steps from
+    the second to the fourth quintile." Each daily step that is significant and that weekly
     returns do not reproduce must exceed the weekly detection limit at the same
     length, because the main text says the weekly test detects it. A step is reproduced when the weekly step is significant
     on both statistics (run_weekly_rho_c.py, criteria)."""
@@ -3076,9 +3302,11 @@ def test_weekly_threshold_rows_of_the_contrast_table():
 
 
 def test_kospi_only_interior_steps_are_unresolved():
-    """subsec:main_result: "neither its Q2--Q3 step nor its Q3--Q4 step, at
-    which its two means reverse, is significant." subsec:size_confounds: "A
-    one-sided 5% test at the network size of the KOSPI-only universe detects
+    """subsec:korean_middle_steps: "Neither the KOSPI-only Q2--Q3 step nor
+    the KOSPI-only Q3--Q4 step is significant, but the KOSPI-only test detects
+    with 80% power only a step larger than the Q2--Q3 and Q3--Q4 steps of the
+    main estimate".
+    subsec:size_confounds: "The KOSPI-only test detects
     either of these two steps with 80% power only if the step is at least
     \\kospiDetectMin, which exceeds the main estimate's Q2--Q3 and Q3--Q4 steps
     of \\rhoCStepHeadlineQtwoQthree and \\rhoCStepHeadlineQthreeQfour". The detection limit is that of
@@ -3116,3 +3344,177 @@ def test_abstract_fits_the_journal_limit():
                 text.index(r"\end{abstract}")].replace(r"\noindent", "")
     n = len(body.split())
     assert n <= 250, f"The abstract holds {n} words, above Physica A's limit of 250"
+
+
+# ---------------------------------------------------------------------------
+# Steps of the arguments of subsec:toy_model, subsec:network_size and
+# si:variance_derivative. The module docstring names the steps that no
+# computation decides.
+# ---------------------------------------------------------------------------
+
+# Network sizes at which each identity in W is decided: an identity in the N x N
+# matrix W is decided at each N, not for all N at once (subsec:toy_model).
+ARG_N_RANGE = range(2, 6)
+
+
+def _toy_model(n: int):
+    """Symbols of eq:toy_rgp for n stocks, and the covariance that the model
+    gives by bilinearity: r_i = beta_i f + sum_k C_ik u_k, with C_ii = delta and
+    C_ik = (1 - delta) W_ik, where f and the u_k are independent with variances
+    sigma_f^2 and sigma_u^2 (subsec:toy_model)."""
+    d, sf, su = sp.symbols("delta sigma_f sigma_u", positive=True)
+    beta = sp.symbols(f"beta0:{n}", real=True)
+    W = sp.Matrix(n, n, lambda i, j: 0 if i == j else sp.Symbol(f"W_{i}_{j}", nonnegative=True))
+    C = sp.Matrix(n, n, lambda i, k: d if i == k else (1 - d) * W[i, k])
+    cov = sp.Matrix(n, n, lambda i, j: beta[i] * beta[j] * sf**2
+                    + su**2 * sum(C[i, k] * C[j, k] for k in range(n)))
+    return d, sf, su, beta, W, cov
+
+
+def _rises_on(expr, x, interval) -> bool:
+    """True where the derivative of expr in x is positive at every point of the interval."""
+    return sp.solveset(sp.diff(expr, x) > 0, x, interval) == interval
+
+
+def _falls_on(expr, x, interval) -> bool:
+    """True where the derivative of expr in x is negative at every point of the interval."""
+    return sp.solveset(sp.diff(expr, x) < 0, x, interval) == interval
+
+
+def test_toy_covariance_and_variance_follow_from_the_model():
+    """subsec:toy_model, eq:toy_cov and eq:toy_var: the covariance of two
+    returns of eq:toy_rgp and the variance of each return, decided as
+    polynomial identities at each N of ARG_N_RANGE."""
+    for n in ARG_N_RANGE:
+        d, sf, su, beta, W, cov = _toy_model(n)
+        for i in range(n):
+            var = (beta[i]**2 * sf**2 + d**2 * su**2
+                   + (1 - d)**2 * sum(W[i, k]**2 for k in range(n)) * su**2)
+            assert sp.expand(cov[i, i] - var) == 0, (
+                f"eq:toy_var does not give the variance of eq:toy_rgp at N = {n}")
+            for j in range(i + 1, n):
+                printed = (beta[i] * beta[j] * sf**2
+                           + d * (1 - d) * (W[i, j] + W[j, i]) * su**2
+                           + (1 - d)**2 * sum(W[i, k] * W[j, k] for k in range(n)
+                                              if k not in (i, j)) * su**2)
+                assert sp.expand(cov[i, j] - printed) == 0, (
+                    f"eq:toy_cov does not give the covariance of eq:toy_rgp at N = {n}")
+
+
+def test_toy_covariance_parts_depend_on_delta_as_printed():
+    """subsec:toy_model, after eq:toy_cov: 'a factor part that does not depend
+    on delta, a direct-link part that rises with delta up to delta = 1/2 and
+    falls beyond it, and a shared-peer part that falls with delta', read on the
+    coefficient of delta in each part. 'Above delta = 1/2, no part of the
+    covariance rises with delta' reads the same coefficients on (1/2, 1)."""
+    x = sp.Symbol("x", real=True)
+    d, sf, su, beta, W, cov = _toy_model(3)
+    assert sp.diff(beta[0] * beta[1] * sf**2, d) == 0, (
+        "subsec:toy_model claims the factor part does not depend on delta")
+    below, above = sp.Interval.open(0, sp.Rational(1, 2)), sp.Interval.open(sp.Rational(1, 2), 1)
+    assert _rises_on(x * (1 - x), x, below) and _falls_on(x * (1 - x), x, above), (
+        "subsec:toy_model claims the direct-link coefficient delta(1-delta) rises "
+        "up to delta = 1/2 and falls beyond it")
+    assert _falls_on((1 - x)**2, x, sp.Interval.open(0, 1)), (
+        "subsec:toy_model claims the shared-peer coefficient (1-delta)^2 falls with delta")
+
+
+def test_toy_bulk_correlation_numerator_and_division():
+    """subsec:toy_model, eq:toy_bulk: a pair with no direct link and no factor
+    part has covariance (1-delta)^2 b_ij sigma_u^2 with b_ij = sum_k W_ik W_jk,
+    decided at each N of ARG_N_RANGE. 'Dividing the numerator and each variance
+    by (1-delta)^2 leaves the numerator at b_ij sigma_u^2 and turns each
+    variance into sum_k W_ik^2 sigma_u^2 + (beta_i^2 sigma_f^2 + delta^2
+    sigma_u^2)/(1-delta)^2', a rational identity. The two functions of delta in
+    that sum, 1/(1-delta)^2 and delta^2/(1-delta)^2, rise on (0, 1)."""
+    for n in ARG_N_RANGE:
+        d, sf, su, beta, W, cov = _toy_model(n)
+        no_link = {W[0, 1]: 0, W[1, 0]: 0, beta[0]: 0, beta[1]: 0}
+        b01 = sum(W[0, k] * W[1, k] for k in range(n)).subs(no_link)
+        assert sp.expand(cov[0, 1].subs(no_link) - (1 - d)**2 * b01 * su**2) == 0, (
+            f"eq:toy_bulk does not give the covariance of a pair without a direct "
+            f"link and factor part at N = {n}")
+        divided = sp.simplify(cov[0, 0] / (1 - d)**2
+                              - (sum(W[0, k]**2 for k in range(n)) * su**2
+                                 + (beta[0]**2 * sf**2 + d**2 * su**2) / (1 - d)**2))
+        assert divided == 0, (
+            f"subsec:toy_model's division of the variance by (1-delta)^2 fails at N = {n}")
+    x = sp.Symbol("x", real=True)
+    unit = sp.Interval.open(0, 1)
+    assert _rises_on(1 / (1 - x)**2, x, unit) and _rises_on(x**2 / (1 - x)**2, x, unit), (
+        "subsec:toy_model claims each divided variance rises with delta on (0, 1)")
+
+
+def test_variance_derivative_of_si():
+    """si:variance_derivative: 'Each variance of main-paper Eq. eq:toy_var has
+    the derivative 2 sigma_u^2 [delta - (1-delta) sum_k W_ik^2] in delta',
+    decided at each N of ARG_N_RANGE, and 'For delta >= 1/2, ... delta >=
+    1-delta', decided on [1/2, 1)."""
+    for n in ARG_N_RANGE:
+        d, sf, su, beta, W, cov = _toy_model(n)
+        printed = 2 * su**2 * (d - (1 - d) * sum(W[0, k]**2 for k in range(n)))
+        assert sp.expand(sp.diff(cov[0, 0], d) - printed) == 0, (
+            f"si:variance_derivative prints a derivative of eq:toy_var that fails at N = {n}")
+    x = sp.Symbol("x", real=True)
+    half_open = sp.Interval.Ropen(sp.Rational(1, 2), 1)
+    assert sp.solveset(x - (1 - x) >= 0, x, half_open) == half_open, (
+        "si:variance_derivative claims delta >= 1 - delta for delta >= 1/2")
+
+
+def test_gram_identity_of_propagation_and_factor_model():
+    """subsec:toy_model: 'The part of the covariance that Eq. eq:toy_rgp
+    produces without f is sigma_u^2 M M^T with M = delta I + (1-delta) W, which
+    is the covariance that a linear factor model with loading matrix sigma_u M
+    produces', decided at each N of ARG_N_RANGE."""
+    for n in ARG_N_RANGE:
+        d, sf, su, beta, W, cov = _toy_model(n)
+        M = d * sp.eye(n) + (1 - d) * W
+        without_f = cov - sf**2 * sp.Matrix(n, 1, list(beta)) * sp.Matrix(1, n, list(beta))
+        assert sp.expand(without_f - su**2 * M * M.T) == sp.zeros(n, n), (
+            f"subsec:toy_model's identity sigma_u^2 M M^T fails at N = {n}")
+        loading = su * M
+        assert sp.expand(loading * loading.T - su**2 * M * M.T) == sp.zeros(n, n), (
+            f"subsec:toy_model's factor model with loading sigma_u M fails at N = {n}")
+
+
+def test_threshold_quantile_and_network_size_rate():
+    """subsec:toy_model: 'Eq. eq:toy_threshold puts tilde-rho_c at the fixed
+    quantile 1 - 1/(N-1) of F_delta', and with a normal F_delta it gives
+    eq:toy_gauss, 1 - Phi(z) = 1/(N-1). subsec:network_size: 'At fixed delta,
+    tilde-rho_c therefore rises with N at the rate sigma_delta per unit of
+    sqrt(2 ln(N-1))', read on eq:toy_closed_form, whose sqrt(2 ln(N-1)) rises
+    with N for N > 2."""
+    N, F, Phi, x, mu, s = sp.symbols("N F Phi x mu sigma_delta", positive=True)
+    (root,) = sp.solve(sp.Eq((N - 1) * (1 - F), 1), F)
+    assert sp.simplify(root - (1 - 1 / (N - 1))) == 0, (
+        "subsec:toy_model claims eq:toy_threshold puts tilde-rho_c at the quantile 1 - 1/(N-1)")
+    # A normal F_delta gives F_delta(tilde-rho_c) = Phi(z); Phi stands for Phi(z).
+    (phi_root,) = sp.solve(sp.Eq((N - 1) * (1 - Phi), 1), Phi)
+    assert sp.simplify((1 - phi_root) - 1 / (N - 1)) == 0, (
+        "subsec:network_size claims eq:toy_threshold becomes eq:toy_gauss")
+    assert sp.diff(mu + s * x, x) == s, (
+        "subsec:network_size claims eq:toy_closed_form rises at the rate sigma_delta "
+        "per unit of sqrt(2 ln(N-1))")
+    n = sp.Symbol("n", real=True)
+    above_two = sp.Interval.open(2, sp.oo)
+    assert _rises_on(sp.sqrt(2 * sp.log(n - 1)), n, above_two), (
+        "subsec:network_size claims sqrt(2 ln(N-1)) rises with N")
+
+
+def test_leading_order_root_lies_above_the_normal_quantile():
+    """si:eq9_verification: the closed form 'keeps only the leading-order root
+    of main-paper Eq. eq:toy_gauss, which lies above the exact normal quantile',
+    decided at each network size from 3 to 5000, which holds every network size
+    that the paper uses (the simulation's \\dgpN included)."""
+    sizes = np.arange(3, 5001)
+    leading = np.sqrt(2 * np.log(sizes - 1))
+    exact = norm.isf(1 / (sizes - 1))
+    used = [int(_params_macros()["dgpN"])] + [
+        int(np.ceil(_per_q(name, g)["n_stocks"].max()))
+        for name in ("korea_headline", "taiwan") for g in range(1, 6)]
+    assert max(used) <= sizes[-1], (
+        f"A network of {max(used)} stocks lies outside the sizes that this test decides")
+    below = sizes[leading <= exact]
+    assert below.size == 0, (
+        "si:eq9_verification claims the leading-order root sqrt(2 ln(N-1)) lies "
+        f"above the exact normal quantile, but it does not at N = {below[:5]}")

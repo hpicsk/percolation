@@ -8,8 +8,7 @@ byte-identical sampled (window, quintile) cells as the headline pipeline
 curvature-inflection rho_c, and compares the cross-quintile gradient of each.
 
 If the two gradients track each other across all five quintiles, rho_c and the
-mean pairwise correlation co-move cross-sectionally. The companion N-divergence
-diagnostic (``run_mean_corr_vs_N``) then separates them along network size.
+mean pairwise correlation co-move cross-sectionally.
 
 Reuses ``iter_window_cells`` with the default point-in-time ``quintile_assigner``
 under each seed of DRAW_SEEDS, so the draws and column filters match

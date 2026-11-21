@@ -4,8 +4,8 @@ Firm Size and the Percolation Threshold of Stock-Return Correlation Networks: Ev
 
 Sungwoo Kang, Jong-Kook Kim
 
-- Correlation-network percolation thresholds rise with firm size to the fourth quintile
+- Daily-return percolation thresholds rise with firm size to the fourth quintile
 - Korean thresholds average 0.524 in the smallest and 0.584 in the largest quintile
-- In Korea and Taiwan, each rise to the next quintile up to the fourth is significant
-- In Korea, adding stocks raises a network's threshold but hardly its mean correlation
-- Under stated conditions, a model with no calibrated parameter predicts the rise
+- In Korea and Taiwan, thresholds rise significantly quintile by quintile to the fourth
+- In Korea, mean correlation leaves 33% of the size gap in thresholds unexplained
+- Under stated conditions, an uncalibrated model predicts the rise with firm size

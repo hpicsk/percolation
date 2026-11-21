@@ -23,7 +23,7 @@ data/                           # Per-stage analysis outputs (one subdir per ana
   bandwidth_sensitivity/        #   Headline tests at 12- and 24-window bandwidths
   window_sensitivity/           #   Window-length sensitivity (30/60/120/252-day)
   min_valid_fraction_sensitivity/  #   Observation-requirement sensitivity (0.7/0.8/0.9)
-  finite_size/                  #   Giant-component curves re-sampled over N, rho_c drift
+  network_size_resampling/      #   rho_c re-sampled over the network size N
   kospi_only/                   #   Venue confound control
   within_sector/                #   Sector-mix confound control
   mean_corr_diagnostic/         #   rho_c vs mean |rho_ij| co-movement

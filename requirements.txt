@@ -3,6 +3,7 @@ pandas>=2.0
 matplotlib>=3.7
 pyarrow>=14.0
 scipy>=1.10
+sympy>=1.12
 networkx>=3.0
 statsmodels>=0.14
 linearmodels>=6.0

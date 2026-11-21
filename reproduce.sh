@@ -54,16 +54,12 @@ python scripts/confounds/run_within_sector.py
 python scripts/nulls/run_null_shuffled.py
 python scripts/nulls/run_rmt_filtered.py
 
-# 4. The giant-component curve re-sampled over the network size N and the
-#    rho_c drift it gives (subsec:threshold_vs_mean), the mean-correlation
-#    diagnostic (subsec:threshold_vs_mean, si:rho_c_vs_mean) measuring the
-#    cross-quintile rho_c-vs-mean|rho| coupling, and the divergence script
-#    (subsec:threshold_vs_mean) re-using the same N grid to show rho_c rises
-#    with sqrt(2 ln(N-1)) while the segment mean |rho| stays flat.
-python scripts/scaling/run_finite_size_scaling.py
-python scripts/scaling/run_finite_size_drift.py
+# 4. The mean-correlation diagnostic (subsec:threshold_vs_mean, si:rho_c_vs_mean),
+#    which regresses rho_c on the mean |rho_ij| across the (window, quintile)
+#    cells, and the network-size resampling (subsec:resampling_method), which
+#    fits rho_c on sqrt(2 ln(N-1)).
 python scripts/scaling/run_mean_corr_diagnostic.py
-python scripts/scaling/run_mean_corr_vs_N.py
+python scripts/scaling/run_rho_c_vs_N.py
 
 # 5. Window-length and column-admissibility-floor sensitivity
 #    (subsec:researcher_choices, subsec:methods; the window sweep also supplies
