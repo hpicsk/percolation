@@ -419,7 +419,7 @@ def test_korea_network_size_component_matches_taiwans_share():
 
 
 def test_q1_network_smaller_than_q5_in_every_window():
-    """subsec:threshold_vs_mean: 'Because Q1 holds fewer stocks than Q5 in each
+    """subsec:threshold_vs_mean: 'Because Q1 contains fewer stocks than Q5 in each
     window, the network size alone produces part of the endpoint contrast.'
     Asserted over every window of both markets, as the network-size component
     that follows is computed in both."""
@@ -431,7 +431,7 @@ def test_q1_network_smaller_than_q5_in_every_window():
             "(subsec:threshold_vs_mean) cannot be checked")
         bad = sizes[sizes["n_stocks_q1"] >= sizes["n_stocks_q5"]]
         assert bad.empty, (
-            "Manuscript claims Q1 holds fewer stocks than Q5 in each window "
+            "Manuscript claims Q1 contains fewer stocks than Q5 in each window "
             f"(subsec:threshold_vs_mean) but {name} has {len(bad)} windows "
             f"where it does not, first at {bad.index[0].date()}")
 
@@ -1835,7 +1835,7 @@ def test_q3q4_power_rule_per_check():
     """subsec:korean_middle_steps: 'The Q3--Q4 step is not significant when the
     threshold is rho_c^chi ... or on windows of \\windowDaysWthirty days, and
     each of these two tests detects a step of the main estimate's size with
-    \\detectPowerPct power ... The Q3--Q4 step is not significant either when
+    \\detectPowerPct power ... The Q3--Q4 step is also not significant when
     size is ranked within sectors, and neither the Q2--Q3 step nor the Q3--Q4
     step is significant in the KOSPI-only panel, but neither of these two tests
     detects a step of the main estimate's size'. subsec:researcher_choices
@@ -3224,13 +3224,13 @@ def test_weekly_threshold_readings():
     "Weekly returns reproduce the Taiwanese endpoint contrast and each
     Taiwanese step through Q4 on both window lengths of the weekly-threshold
     check." The abstract: "In weekly returns, which stale prices affect less,
-    each Taiwanese step through the fourth and, in both markets, the
-    difference between the two extreme quintiles are significant, whereas not
-    every Korean step is significant there or with other estimation settings."
-    sec:introduction: "In weekly returns, each Taiwanese step through the
-    fourth quintile and, in both markets, the difference between the smallest
-    and the largest quintile are significant, but not every Korean step is, so weekly
-    returns do not exclude stale prices as the source of the Korean steps from
+    the difference between the extreme quintiles is significant in both
+    markets, as is each Taiwanese step through the fourth, whereas some Korean
+    steps lose significance in weekly returns or under other estimation
+    settings." sec:introduction: "In weekly returns, the difference between
+    the smallest and the largest quintile is significant in both markets, as is
+    each Taiwanese step through the fourth quintile, but not every Korean step
+    is, so weekly returns do not exclude stale prices as the source of the Korean steps from
     the second to the fourth quintile." Each daily step that is significant and that weekly
     returns do not reproduce must exceed the weekly detection limit at the same
     length, because the main text says the weekly test detects it. A step is reproduced when the weekly step is significant
